@@ -10,5 +10,5 @@ function Estoque() {
     )
   }
   
-  export default Estoque;
+export default Estoque;
   
