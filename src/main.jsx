@@ -7,8 +7,8 @@ import {
   Navigate,
 } from "react-router-dom"
 import Home from './pages/home.jsx'
-
-
+import Estoque from './pages/estoque.jsx'
+import Produtos from './pages/produtos.jsx' 
 
 
 
@@ -18,8 +18,16 @@ const router = createBrowserRouter([
     element: <Navigate to="/home" replace />,
   },
   {
-    path: "/home",
+    path: "/Home",
     element: <Home />
+  },
+  {
+    path: "/Estoque",
+    element: <Estoque />
+  },
+  {
+    path: "/Produtos",
+    element: <Produtos />
   },
 ]);
 
