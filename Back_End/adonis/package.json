@@ -1,5 +1,5 @@
 {
-  "name": "adonis-back-end",
+  "name": "adonis",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -54,7 +54,7 @@
     "@adonisjs/auth": "^9.3.1",
     "@adonisjs/core": "^6.17.2",
     "@adonisjs/cors": "^2.2.1",
-    "@adonisjs/lucid": "^21.6.1",
+    "@adonisjs/lucid": "^21.6.0",
     "@vinejs/vine": "^3.0.0",
     "luxon": "^3.6.1",
     "pg": "^8.15.6",

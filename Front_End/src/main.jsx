@@ -8,31 +8,42 @@ import {
 } from "react-router-dom"
 import Home from './pages/home.jsx'
 import Estoque from './pages/estoque.jsx'
-import Produtos from './pages/produtos.jsx' 
-
-
+import Produtos from './pages/produtos.jsx'
+import Login from './pages/login.jsx'  // Página de login
+import Signup from './pages/signup.jsx'  // Página de cadastro
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/home" replace />,
+    element: <Navigate to="/login" replace />,
   },
   {
-    path: "/Home",
-    element: <Home />
+    path: "/login",
+    element: <Login />,
   },
   {
-    path: "/Estoque",
-    element: <Estoque />
+    path: "/signup",
+    element: <Signup />,  // Rota para a página de cadastro
   },
   {
-    path: "/Produtos",
-    element: <Produtos />
+    path: "/home",
+    element: <Home />,
+  },
+  {
+    path: "/estoque",
+    element: <Estoque />,
+  },
+  {
+    path: "/produtos",
+    element: <Produtos />,
   },
 ]);
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <RouterProvider router={router} />
-  </StrictMode>,
+  </StrictMode>
 )
+
+
+
