@@ -21,13 +21,12 @@ export default function Signup() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.message || 'Erro ao cadastrar')
+        setError(data.message || 'Erro ao cadastrar usuário')
         return
       }
 
-      // Salva o token e redireciona
-      localStorage.setItem('token', data.token.token)
-      navigate('/home')
+      // Redireciona para a tela de login
+      navigate('/login')
     } catch (err) {
       setError('Erro na conexão com o servidor')
     }
@@ -70,7 +69,7 @@ export default function Signup() {
         </button>
 
         <p className="mt-4 text-sm text-center">
-            Já tem conta? <a href="/login" className="text-blue-600 underline">Faça login</a>
+          Já tem conta? <a href="/login" className="text-blue-600 underline">Entrar</a>
         </p>
 
       </form>
