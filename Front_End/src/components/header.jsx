@@ -114,7 +114,6 @@ function Header() {
 
       {/* Nome do usuário + logout */}
       <div
-        onClick={handleLogout}
         className="cursor-pointer py-0 flex items-center gap-3 text-blue-600 hover:text-blue-800"
       >
 
@@ -125,7 +124,7 @@ function Header() {
           </div>
         )}
 
-        <div className="cursor-pointer py-0 flex flex-col items-end text-blue-600 hover:text-blue-800 transition-transform hover:scale-110">
+        <div onClick={handleLogout} className="cursor-pointer py-0 flex flex-col items-end text-blue-600 hover:text-blue-800 transition-transform hover:scale-110">
           <BiLogOut className="text-4xl" />
           <span className="text-base text-blue-700">Sair</span>
         </div>
