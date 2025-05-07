@@ -1,18 +1,17 @@
 import { loginValidator, registerValidator } from '#validators/auth'
 import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
-import { messages } from '@vinejs/vine/defaults'
 
 
 export default class AuthController {
   
-  async register({ request }: HttpContext) {
+  async register({ request, response }: HttpContext) {
     const data = await request.validateUsing(registerValidator)
-    const user = await User.create(data)
-
-    return User.accessTokens.create(user, ['*'])
-
+    await User.create(data)
+  
+    return response.created({ message: 'Usuário criado com sucesso' })
   }
+  
   
   async login({ request }: HttpContext) {
     const {email, password} = await request.validateUsing(loginValidator)

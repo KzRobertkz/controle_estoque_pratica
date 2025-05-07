@@ -26,7 +26,7 @@ export default function Login() {
       }
 
       // Salva o token no localStorage
-      localStorage.setItem('token', data.token.token)
+      localStorage.setItem('token', data.token)
 
       // Redireciona para a página inicial
       navigate('/home')
