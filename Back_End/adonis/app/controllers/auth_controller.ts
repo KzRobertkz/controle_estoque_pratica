@@ -30,9 +30,9 @@ export default class AuthController {
   async me({ auth }: HttpContext) {
     await auth.check()
     return {
-      user: auth.user,
+      user: auth.user?.serialize(), // adiciona o .serialize()
     }
-    
   }
+  
   
 }
