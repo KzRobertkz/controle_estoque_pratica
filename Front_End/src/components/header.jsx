@@ -117,11 +117,12 @@ function Header() {
       <div
         className="cursor-pointer py-0 flex items-center gap-3 text-blue-600 hover:text-blue-800"
       >
-
+      
+      {/* Exibe o primeiro nome */}
        {user?.fullName && (
           <div className="flex flex-col items-center text-blue-600 font-medium text-base hover:text-blue-800 transition-transform hover:scale-110">
             <CgProfile className="text-4xl ite "/>
-           {user.fullName.split(" ")[0]} {/* Exibe o primeiro nome */}
+           {user.fullName.split(" ")[0]} 
           </div>
         )}
 
