@@ -30,10 +30,11 @@ router.get('/me', [AuthController, 'me']).as('auth.me')
 
 router
   .group(() => {
-    
+
     // Products routes
     router.get('/products', '#controllers/products_controller.index')
     router.post('/products', '#controllers/products_controller.store')
+    router.delete('/products/:id', '#controllers/products_controller.destroy')
   })
   .middleware(middleware.auth())
 

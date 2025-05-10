@@ -18,7 +18,7 @@ export default class ProductsController {
   async store({ request, response }: HttpContext) {
     try {
       // Log request body for debugging
-      console.log('Request body:', request.body())
+      console.log('\nDados do produto:', request.body())
       
       // Get data from request
       const data = request.only(['name', 'description', 'price', 'stock'])
@@ -39,10 +39,39 @@ export default class ProductsController {
       
       return response.created(product)
     } catch (error) {
-      console.error('Error creating product:', error)
+      console.error('Erro ao criar o produto:', error)
       return response.internalServerError({ 
         message: 'Erro ao criar produto', 
         error: error.message 
+      })
+    }
+  }
+
+  async destroy({ request, response }: HttpContext) {
+    try {
+      // Adicionando log para depuração
+      console.log('\nParâmetros recebidos:', request.params())
+      
+      const productId = request.param('id')
+      console.log('\nID do produto excluido:', productId)
+      
+      if (!productId) {
+        return response.badRequest({ message: 'ID do produto não fornecido' })
+      }
+      
+      const product = await Product.find(productId)
+
+      if (!product) {
+        return response.notFound({ message: 'Produto não encontrado' })
+      }
+
+      await product.delete()
+      return response.ok({ message: 'Produto excluído com sucesso' })
+    } catch (error) {
+      console.error('Erro ao excluir o produto:', error)
+      return response.internalServerError({
+        message: 'Erro ao excluir produto',
+        error: error.message
       })
     }
   }
