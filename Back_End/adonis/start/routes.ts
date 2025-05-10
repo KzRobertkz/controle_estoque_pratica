@@ -24,3 +24,16 @@ router.post('/login', [AuthController, 'login']).as('auth.login')
 router.delete('/logout', [AuthController, 'logout']).as('auth.logout').use(middleware.auth())
 
 router.get('/me', [AuthController, 'me']).as('auth.me')
+
+
+// start/routes.ts
+
+router
+  .group(() => {
+    
+    // Products routes
+    router.get('/products', '#controllers/products_controller.index')
+    router.post('/products', '#controllers/products_controller.store')
+  })
+  .middleware(middleware.auth())
+
