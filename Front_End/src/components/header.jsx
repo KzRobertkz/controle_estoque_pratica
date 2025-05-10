@@ -50,6 +50,7 @@ function Header() {
       }
 
       localStorage.removeItem("token");
+      setUser(null);
       navigate("/login");
     } catch (error) {
       console.error("Erro na requisição de logout:", error);

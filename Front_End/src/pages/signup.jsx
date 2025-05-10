@@ -11,26 +11,28 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-
+  
     try {
       const response = await fetch('http://localhost:3333/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ full_name: fullName, email, password }),
       })
-
+  
       const data = await response.json()
-
+  
       if (!response.ok) {
+        // Aqui você pode verificar se o erro é de validação e detalhar as mensagens
         setError(data.message || 'Erro ao cadastrar usuário')
         return
       }
-
+  
       navigate('/login')
     } catch (err) {
       setError('Erro na conexão com o servidor')
     }
   }
+  
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">

@@ -71,7 +71,7 @@ export default function Login() {
           Entrar
         </button>
 
-        <p className="mt-4 text-sm text-center">
+        <p className="mt-4 text-sm text-center text-blue-400">
             Ainda não tem conta? <a href="/signup" className="text-blue-600 underline">Cadastre-se</a>
         </p>
 
