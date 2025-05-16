@@ -75,5 +75,33 @@ export default class ProductsController {
       })
     }
   }
+
+  async update({ request, response }: HttpContext) {
+    try {
+      const productId = request.param('id')
+      const data = request.only(['name', 'description', 'price', 'stock'])
+
+      if (!productId) {
+        return response.badRequest({ message: 'ID do produto não fornecido' })
+      }
+
+      const product = await Product.find(productId)
+      if (!product) {
+        return response.notFound({ message: 'Produto não encontrado' })
+      }
+
+      product.name = data.name ?? product.name
+      product.description = data.description ?? product.description
+      product.price = data.price !== undefined ? Number(data.price) : product.price
+      product.stock = data.stock !== undefined ? Number(data.stock) : product.stock
+
+      await product.save()
+
+      return response.ok(product)
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error)
+      return response.internalServerError({ message: 'Erro ao atualizar produto', error: error.message })
+    }
+  }
 }
 
