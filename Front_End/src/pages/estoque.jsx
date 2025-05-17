@@ -2,50 +2,145 @@ import { useEffect, useState } from "react";
 import axios from 'axios';
 import Header from "../components/header";
 
+import { useSearchParams } from "react-router-dom";
+
 function Estoque() {
   const [products, setProducts] = useState([]);
+  const [meta, setMeta] = useState({ currentPage: 1, lastPage: 1, total: 0 });
   const [newProduct, setNewProduct] = useState({
-    name: '',
-    description: '',
-    price: '',
-    stock: ''
+    name: "",
+    description: "",
+    price: "",
+    stock: "",
   });
   const [editingProductId, setEditingProductId] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Extraindo a página atual dos parâmetros da URL mais explicitamente
+  const pageParam = searchParams.get("page");
+  const page = pageParam ? Number(pageParam) : 1;
 
   const api = axios.create({
-    baseURL: 'http://localhost:3333',
-    withCredentials: true
+    baseURL: "http://localhost:3333",
+    withCredentials: true,
   });
 
-  api.interceptors.request.use(config => {
-    const token = localStorage.getItem('token');
+  // Debug intercept para verificar todas as chamadas API
+  api.interceptors.response.use(
+    (response) => {
+      console.log("API Response Success:", response.config.url, response.data);
+      return response;
+    },
+    (error) => {
+      console.error("API Response Error:", error.config?.url, error);
+      return Promise.reject(error);
+    }
+  );
+
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log("API Request:", config.url, config.params);
     return config;
   });
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (pageNumber = 1, query = "") => {
     try {
-      const res = await api.get('/products');
-      const data = Array.isArray(res.data) ? res.data : [];
+      console.log(`Fazendo requisição para página com busca "${query}"`);
+      
+      const res = await api.get("/products", {
+        params: { page: pageNumber, search: query },
+      });
+      
+      // Garantir que temos dados válidos
+      const data = Array.isArray(res.data.data) ? res.data.data : [];
+      
+      // Log detalhado da resposta
+      console.log("Resposta da API:", {
+        data: data.length,
+        meta: res.data.meta,
+        fullResponse: res.data
+      });
+      
+      // Se não tiver meta, vamos criar manualmente com base nos dados
+      const metaData = res.data.meta || {};
+      const totalPages = Math.max(metaData.last_page || 1, 1);
+      
+      // Forçar pelo menos 6 páginas para teste se tivermos produtos
+      // REMOVA ESTA LINHA EM PRODUÇÃO - apenas para teste
+      const debugTotalPages = data.length > 0 ? Math.max(totalPages, 6) : totalPages;
+      
+      console.log(`Configurando meta com lastPage = ${debugTotalPages}`);
+      
       setProducts(data);
-      setError('');
+      setMeta({
+        currentPage: Number(metaData.current_page || pageNumber),
+        lastPage: debugTotalPages,
+        total: metaData.total || data.length
+      });
+      setError("");
     } catch (err) {
+      console.error("Erro ao buscar produtos:", err);
       if (err.response && err.response.status === 401) {
-        setError('Você precisa estar logado para visualizar produtos.');
+        setError("Você precisa estar logado para visualizar produtos.");
       } else {
-        setError('Erro ao carregar produtos. Por favor, tente novamente.');
+        setError("Erro ao carregar produtos. Por favor, tente novamente.");
       }
     }
   };
 
+  const goToPage = (pageNumber) => {
+    console.log(`Tentando ir para a página ${pageNumber} (página atual: ${page})`);
+    
+    if (pageNumber < 1 || pageNumber > meta.lastPage) {
+      console.warn(`Página ${pageNumber} está fora dos limites (1-${meta.lastPage})`);
+      return;
+    }
+    
+    try {
+      // Cria um novo objeto com os parâmetros atuais
+      const newParams = new URLSearchParams(searchParams);
+      // Atualiza o parâmetro de página
+      newParams.set("page", pageNumber.toString());
+      
+      console.log(`Atualizando URL para página ${pageNumber}`);
+      setSearchParams(newParams);
+      
+      // Se o estado interno da página não corresponder ao número da página que estamos indo
+      // isso pode criar uma condição de corrida em alguns casos
+      if (page !== pageNumber) {
+        console.log(`Forçando busca para página ${pageNumber} (estado interno: ${page})`);
+        fetchProducts(pageNumber, searchQuery);
+      }
+    } catch (err) {
+      console.error("Erro ao navegar para a página:", err);
+    }
+  };
+
+  // Este efeito força a atualização dos produtos quando o componente monta
   useEffect(() => {
-    fetchProducts();
+    // Força pelo menos 3 páginas para teste
+    const initialPage = Number(searchParams.get("page") || "1");
+    console.log("Componente montado - carregando página inicial:", initialPage);
+    fetchProducts(initialPage, searchParams.get("search") || "");
+    
+    // Descomente esta linha para debug
+    // setMeta(prev => ({ ...prev, lastPage: 3 }));
   }, []);
+
+  // Inicializa o valor de busca a partir dos parâmetros da URL
+  useEffect(() => {
+    const searchFromParams = searchParams.get("search") || "";
+    if (searchQuery !== searchFromParams) {
+      setSearchQuery(searchFromParams);
+    }
+  }, [searchParams]);  
+  
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -62,8 +157,12 @@ function Estoque() {
         setProducts(products.map(p => (p.id === editingProductId ? res.data : p)));
         setSuccessMessage("Produto atualizado com sucesso!");
       } else {
-        const res = await api.post('/products', productData);
-        setProducts([...products, res.data]);
+        await api.post('/products', productData);
+        // Recarregar a primeira página após adicionar um produto
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set("page", "1");
+        setSearchParams(newParams);
+        fetchProducts(1, searchQuery); // Forçar atualização da página 1
         setSuccessMessage("Produto adicionado com sucesso!");
       }
 
@@ -72,6 +171,7 @@ function Estoque() {
       setTimeout(() => setSuccessMessage(''), 3000);
       setError('');
     } catch (err) {
+      console.error("Erro ao salvar produto:", err);
       setError('Erro ao salvar produto. Verifique os dados e tente novamente.');
     }
   };
@@ -98,6 +198,15 @@ function Estoque() {
         await api.delete(`/products/${productId}`);
         setProducts(products.filter(product => product.id !== productId));
         setSuccessMessage('Produto excluído com sucesso!');
+        
+        // Se após excluir não houver mais produtos na página atual e não for a primeira página
+        if (products.length === 1 && page > 1) {
+          setSearchParams({ page: (page - 1).toString(), search: searchQuery });
+        } else {
+          // Recarregar a página atual para atualizar a paginação
+          fetchProducts(page, searchQuery);
+        }
+        
         setTimeout(() => setSuccessMessage(''), 3000);
       } catch (err) {
         let errorMessage = 'Erro ao excluir produto.';
@@ -113,9 +222,9 @@ function Estoque() {
     }
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Verificar se há mais de 10 produtos no total para estilizar o botão de próximo
+  // Sempre consideramos que há mais de 10 produtos se houver mais de uma página
+  const hasMoreThan10Products = meta.lastPage > 1;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -141,7 +250,16 @@ function Estoque() {
             type="text"
             placeholder="Pesquisar produto"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setSearchQuery(newValue);
+              
+              // Atualiza os parâmetros da URL mantendo a consistência
+              const newParams = new URLSearchParams(searchParams);
+              newParams.set("search", newValue);
+              newParams.set("page", "1"); // Reset to page 1 on search change
+              setSearchParams(newParams);
+            }}
             className="p-2 border rounded w-full"
           />
         </div>
@@ -209,8 +327,8 @@ function Estoque() {
 
         {/* Lista de Produtos */}
         <div className="grid grid-cols-1 gap-4">
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
+          {products.length > 0 ? (
+            products.map((product) => (
               <div key={product.id} className="bg-white p-4 rounded-lg shadow hover:shadow-md transition">
                 <div className="flex justify-between items-start">
                   <div>
@@ -241,6 +359,49 @@ function Estoque() {
           ) : (
             <div className="text-center text-gray-500 mt-10">
               Nenhum produto encontrado.
+            </div>
+          )}
+
+          {/* Paginação - Agora sempre mostra pelo menos 3 páginas para teste */}
+          {products.length > 0 && (
+            <div className="flex justify-center mt-6 space-x-2">
+              <button
+                onClick={() => goToPage(page - 1)}
+                disabled={page <= 1}
+                className={`px-3 py-1 rounded transition ${
+                  page <= 1 ? "bg-gray-300 opacity-50" : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
+              >
+                Anterior
+              </button>
+
+              {/* Mostrar números de página baseado em meta.lastPage */}
+              {Array.from({ length: meta.lastPage }, (_, i) => i + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => goToPage(pageNum)}
+                  className={`px-3 py-1 rounded ${
+                    page === pageNum ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+
+              <button
+                onClick={() => {
+                  console.log(`Clicou em Próximo. Página atual: ${page}, indo para: ${page + 1}`);
+                  goToPage(page + 1);
+                }}
+                disabled={page >= meta.lastPage}
+                className={`px-3 py-1 rounded transition ${
+                  page >= meta.lastPage 
+                    ? "bg-gray-300 opacity-50" 
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
+              >
+                Próximo
+              </button>
             </div>
           )}
         </div>

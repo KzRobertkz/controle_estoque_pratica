@@ -3,10 +3,23 @@ import { HttpContext } from '@adonisjs/core/http'
 import Product from '#models/product'
 
 export default class ProductsController {
-  async index({ response }: HttpContext) {
+  async index({ request, response }: HttpContext) {
     try {
-      const products = await Product.all()
-      return products
+      const page = Number(request.input('page', 1))  // página atual, default 1
+      const search = request.input('search', '')     // texto para buscar
+
+      const limit = 10
+      const query = Product.query()
+
+      if (search) {
+        query.where('name', 'like', `%${search}%`)
+      }
+
+      query.orderBy('created_at', 'desc') // <- adicione isso
+
+      const products = await query.paginate(page, limit)
+
+      return response.ok(products)  // products possui {data: [...], meta: {...}, links: {...}}
     } catch (error) {
       return response.internalServerError({ 
         message: 'Erro ao buscar produtos', 
@@ -14,6 +27,7 @@ export default class ProductsController {
       })
     }
   }
+
   
   async store({ request, response }: HttpContext) {
     try {
