@@ -248,7 +248,7 @@ function Estoque() {
               newParams.set("page", "1"); // Reset to page 1 on search change
               setSearchParams(newParams);
             }}
-            className="p-2 border rounded w-full"
+            className="p-2 mt-6 border rounded w-full"
           />
         </div>
 
