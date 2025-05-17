@@ -3,10 +3,23 @@ import { HttpContext } from '@adonisjs/core/http'
 import Product from '#models/product'
 
 export default class ProductsController {
-  async index({ response }: HttpContext) {
+  async index({ request, response }: HttpContext) {
     try {
-      const products = await Product.all()
-      return products
+      const page = Number(request.input('page', 1))  // página atual, default 1
+      const search = request.input('search', '')     // texto para buscar
+
+      const limit = 10
+      const query = Product.query()
+
+      if (search) {
+        query.where('name', 'like', `%${search}%`)
+      }
+
+      query.orderBy('created_at', 'desc') 
+
+      const products = await query.paginate(page, limit)
+
+      return response.ok(products)  // products possui {data: [...], meta: {...}, links: {...}}
     } catch (error) {
       return response.internalServerError({ 
         message: 'Erro ao buscar produtos', 
@@ -14,6 +27,7 @@ export default class ProductsController {
       })
     }
   }
+
   
   async store({ request, response }: HttpContext) {
     try {
@@ -73,6 +87,34 @@ export default class ProductsController {
         message: 'Erro ao excluir produto',
         error: error.message
       })
+    }
+  }
+
+  async update({ request, response }: HttpContext) {
+    try {
+      const productId = request.param('id')
+      const data = request.only(['name', 'description', 'price', 'stock'])
+
+      if (!productId) {
+        return response.badRequest({ message: 'ID do produto não fornecido' })
+      }
+
+      const product = await Product.find(productId)
+      if (!product) {
+        return response.notFound({ message: 'Produto não encontrado' })
+      }
+
+      product.name = data.name ?? product.name
+      product.description = data.description ?? product.description
+      product.price = data.price !== undefined ? Number(data.price) : product.price
+      product.stock = data.stock !== undefined ? Number(data.stock) : product.stock
+
+      await product.save()
+
+      return response.ok(product)
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error)
+      return response.internalServerError({ message: 'Erro ao atualizar produto', error: error.message })
     }
   }
 }
