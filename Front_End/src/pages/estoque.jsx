@@ -5,8 +5,14 @@ import Header from "../components/header";
 import { useSearchParams } from "react-router-dom";
 
 function Estoque() {
+
+  const api = axios.create({
+    baseURL: "http://localhost:3333",
+    withCredentials: true,
+  });
+
+  // Mecanicas dos Produtos
   const [products, setProducts] = useState([]);
-  const [meta, setMeta] = useState({ currentPage: 1, lastPage: 1, total: 0 });
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
@@ -14,19 +20,16 @@ function Estoque() {
     stock: "",
   });
   const [editingProductId, setEditingProductId] = useState(null);
+
+  // Mecanicas de pesquisa
+  const [meta, setMeta] = useState({ currentPage: 1, lastPage: 1, total: 0 });
   const [searchQuery, setSearchQuery] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-
   // Extraindo a página atual dos parâmetros da URL mais explicitamente
   const pageParam = searchParams.get("page");
   const page = pageParam ? Number(pageParam) : 1;
-
-  const api = axios.create({
-    baseURL: "http://localhost:3333",
-    withCredentials: true,
-  });
 
   // Debug intercept para verificar todas as chamadas API
   api.interceptors.response.use(
@@ -49,6 +52,8 @@ function Estoque() {
     return config;
   });
 
+
+  // Funções 
   const fetchProducts = async (pageNumber = 1, query = "") => {
     try {
       console.log(`Fazendo requisição para página com busca "${query}"`);
@@ -94,6 +99,7 @@ function Estoque() {
     }
   };
 
+
   const goToPage = (pageNumber) => {
     console.log(`Tentando ir para a página ${pageNumber} (página atual: ${page})`);
     
@@ -122,8 +128,9 @@ function Estoque() {
     }
   };
 
-  // Este efeito força a atualização dos produtos quando o componente monta
-  useEffect(() => {
+
+  // Efeitos
+  useEffect(() => { // Este efeito força a atualização dos produtos quando o componente monta
     // Força pelo menos 3 páginas para teste
     const initialPage = Number(searchParams.get("page") || "1");
     console.log("Componente montado - carregando página inicial:", initialPage);
