@@ -15,7 +15,7 @@ export default class ProductsController {
         query.where('name', 'like', `%${search}%`)
       }
 
-      query.orderBy('created_at', 'desc') // <- adicione isso
+      query.orderBy('created_at', 'desc') 
 
       const products = await query.paginate(page, limit)
 
