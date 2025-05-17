@@ -62,32 +62,28 @@ function Estoque() {
         params: { page: pageNumber, search: query },
       });
       
-      // Garantir que temos dados válidos
       const data = Array.isArray(res.data.data) ? res.data.data : [];
-      
-      // Log detalhado da resposta
-      console.log("Resposta da API:", {
-        data: data.length,
-        meta: res.data.meta,
-        fullResponse: res.data
-      });
-      
-      // Se não tiver meta, vamos criar manualmente com base nos dados
       const metaData = res.data.meta || {};
-      const totalPages = Math.max(metaData.last_page || 1, 1);
       
-      // Forçar pelo menos 6 páginas para teste se tivermos produtos
-      // REMOVA ESTA LINHA EM PRODUÇÃO - apenas para teste
-      const debugTotalPages = data.length > 0 ? Math.max(totalPages, 6) : totalPages;
-      
-      console.log(`Configurando meta com lastPage = ${debugTotalPages}`);
-      
+      console.log("Meta antes de atualizar:", metaData); // Debug
+
       setProducts(data);
       setMeta({
-        currentPage: Number(metaData.current_page || pageNumber),
-        lastPage: debugTotalPages,
-        total: metaData.total || data.length
+        currentPage: Number(metaData.currentPage || pageNumber),
+        lastPage: Number(metaData.lastPage || Math.ceil(data.length / 10)),
+        total: Number(metaData.total || data.length),
+        perPage: Number(metaData.perPage || 10),
+        firstPage: Number(metaData.firstPage || 1)
       });
+
+      console.log("Meta após atualizar:", {
+        currentPage: Number(metaData.currentPage || pageNumber),
+        lastPage: Number(metaData.lastPage || Math.ceil(data.length / 10)),
+        total: Number(metaData.total || data.length),
+        perPage: Number(metaData.perPage || 10),
+        firstPage: Number(metaData.firstPage || 1)
+      }); // Debug
+
       setError("");
     } catch (err) {
       console.error("Erro ao buscar produtos:", err);
@@ -101,53 +97,32 @@ function Estoque() {
 
 
   const goToPage = (pageNumber) => {
-    console.log(`Tentando ir para a página ${pageNumber} (página atual: ${page})`);
+    if (pageNumber < 1 || pageNumber > meta.lastPage) return;
     
-    if (pageNumber < 1 || pageNumber > meta.lastPage) {
-      console.warn(`Página ${pageNumber} está fora dos limites (1-${meta.lastPage})`);
-      return;
-    }
-    
-    try {
-      // Cria um novo objeto com os parâmetros atuais
-      const newParams = new URLSearchParams(searchParams);
-      // Atualiza o parâmetro de página
-      newParams.set("page", pageNumber.toString());
-      
-      console.log(`Atualizando URL para página ${pageNumber}`);
-      setSearchParams(newParams);
-      
-      // Se o estado interno da página não corresponder ao número da página que estamos indo
-      // isso pode criar uma condição de corrida em alguns casos
-      if (page !== pageNumber) {
-        console.log(`Forçando busca para página ${pageNumber} (estado interno: ${page})`);
-        fetchProducts(pageNumber, searchQuery);
-      }
-    } catch (err) {
-      console.error("Erro ao navegar para a página:", err);
-    }
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", pageNumber.toString());
+    setSearchParams(newParams);
   };
 
 
-  // Efeitos
-  useEffect(() => { // Este efeito força a atualização dos produtos quando o componente monta
-    // Força pelo menos 3 páginas para teste
-    const initialPage = Number(searchParams.get("page") || "1");
-    console.log("Componente montado - carregando página inicial:", initialPage);
-    fetchProducts(initialPage, searchParams.get("search") || "");
-    
-    // Descomente esta linha para debug
-    // setMeta(prev => ({ ...prev, lastPage: 3 }));
-  }, []);
 
+  // Efeitos
   // Inicializa o valor de busca a partir dos parâmetros da URL
   useEffect(() => {
     const searchFromParams = searchParams.get("search") || "";
+    const newPage = Number(searchParams.get("page") || "1");
+
     if (searchQuery !== searchFromParams) {
       setSearchQuery(searchFromParams);
     }
-  }, [searchParams]);  
-  
+
+    fetchProducts(newPage, searchFromParams);
+  }, [searchParams]);
+
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [searchParams]);
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -183,6 +158,9 @@ function Estoque() {
     }
   };
 
+  
+
+
   const handleEditProduct = (product) => {
     setNewProduct({
       name: product.name,
@@ -208,7 +186,7 @@ function Estoque() {
         
         // Se após excluir não houver mais produtos na página atual e não for a primeira página
         if (products.length === 1 && page > 1) {
-          setSearchParams({ page: (page - 1).toString(), search: searchQuery });
+          goToPage(page - 1);
         } else {
           // Recarregar a página atual para atualizar a paginação
           fetchProducts(page, searchQuery);
@@ -232,6 +210,9 @@ function Estoque() {
   // Verificar se há mais de 10 produtos no total para estilizar o botão de próximo
   // Sempre consideramos que há mais de 10 produtos se houver mais de uma página
   const hasMoreThan10Products = meta.lastPage > 1;
+
+  console.log("Renderizando com meta:", meta);
+  console.log("Condição de renderização da paginação:", meta.lastPage > 1);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -365,30 +346,57 @@ function Estoque() {
             ))
           ) : (
             <div className="text-center text-gray-500 mt-10">
-              Nenhum produto encontrado.
+              <p className="mb-4">Nenhum produto encontrado.</p>
+              
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page <= 1}
+                  className={`px-4 py-2 rounded ${
+                    page <= 1
+                      ? "bg-gray-300 text-gray-700 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
+                >
+                  Voltar
+                </button>
+
+                <button
+                  onClick={() => fetchProducts(page, searchQuery)}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  Recarregar
+                </button>
+              </div>
             </div>
           )}
+        </div> {/* Fechamento do grid de produtos */}
 
-          {/* Paginação - Agora sempre mostra pelo menos 3 páginas para teste */}
-          {products.length > 0 && (
-            <div className="flex justify-center mt-6 space-x-2">
+        {/* Paginação separada */}
+        <div className="mt-6">
+          {console.log("Estado atual do meta:", meta)} {/* Debug */}
+          {meta.lastPage > 1 && (
+            <div className="flex justify-center gap-2">
               <button
-                onClick={() => goToPage(page - 1)}
-                disabled={page <= 1}
-                className={`px-3 py-1 rounded transition ${
-                  page <= 1 ? "bg-gray-300 opacity-50" : "bg-blue-600 text-white hover:bg-blue-700"
+                onClick={() => goToPage(meta.currentPage - 1)}
+                disabled={meta.currentPage <= 1}
+                className={`px-4 py-2 rounded ${
+                  meta.currentPage <= 1
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
                 Anterior
               </button>
 
-              {/* Mostrar números de página baseado em meta.lastPage */}
               {Array.from({ length: meta.lastPage }, (_, i) => i + 1).map((pageNum) => (
                 <button
                   key={pageNum}
                   onClick={() => goToPage(pageNum)}
-                  className={`px-3 py-1 rounded ${
-                    page === pageNum ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"
+                  className={`px-4 py-2 rounded ${
+                    pageNum === meta.currentPage
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 hover:bg-gray-300"
                   }`}
                 >
                   {pageNum}
@@ -396,14 +404,11 @@ function Estoque() {
               ))}
 
               <button
-                onClick={() => {
-                  console.log(`Clicou em Próximo. Página atual: ${page}, indo para: ${page + 1}`);
-                  goToPage(page + 1);
-                }}
-                disabled={page >= meta.lastPage}
-                className={`px-3 py-1 rounded transition ${
-                  page >= meta.lastPage 
-                    ? "bg-gray-300 opacity-50" 
+                onClick={() => goToPage(meta.currentPage + 1)}
+                disabled={meta.currentPage >= meta.lastPage}
+                className={`px-4 py-2 rounded ${
+                  meta.currentPage >= meta.lastPage
+                    ? "bg-gray-300 cursor-not-allowed"
                     : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
