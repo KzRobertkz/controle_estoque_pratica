@@ -1,5 +1,5 @@
 // app/controllers/products_controller.js
-import { HttpContext } from '@adonisjs/core/http'
+import type { HttpContext } from '@adonisjs/core/http'
 import Product from '#models/product'
 
 export default class ProductsController {
@@ -115,6 +115,24 @@ export default class ProductsController {
     } catch (error) {
       console.error('Erro ao atualizar produto:', error)
       return response.internalServerError({ message: 'Erro ao atualizar produto', error: error.message })
+    }
+  }
+
+  public async getRecent({ response }: HttpContext) {
+    try {
+      const recentProducts = await Product
+        .query()
+        .orderBy('created_at', 'desc')
+        .limit(2) 
+        .exec()
+      
+      return response.ok(recentProducts)
+    } catch (error) {
+      console.error('Erro detalhado:', error)
+      return response.internalServerError({
+        message: 'Erro ao buscar produtos recentes',
+        error: error.message
+      })
     }
   }
 }
