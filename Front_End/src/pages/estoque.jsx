@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from 'axios';
 import Header from "../components/header";
-
 import { useSearchParams } from "react-router-dom";
+
+import { FaFilter } from "react-icons/fa";
+import { HiMiniTag } from "react-icons/hi2";
 
 function Estoque() {
 
@@ -233,7 +235,7 @@ function Estoque() {
           </div>
         )}
 
-        <div className="mb-4">
+        <div className="mb-4 flex gap-2">
           <input
             type="text"
             placeholder="Pesquisar produto"
@@ -250,6 +252,8 @@ function Estoque() {
             }}
             className="p-2 mt-6 border rounded w-full"
           />
+          <FaFilter className="mt-8 text-3xl text-blue-600 hover:text-blue-800 transition-transform hover:scale-110" />
+          <HiMiniTag className="mt-7 text-4xl text-blue-600 hover:text-blue-800 transition-transform hover:scale-110" />
         </div>
 
         {/* Formulário para Adicionar/Editar Produto */}
