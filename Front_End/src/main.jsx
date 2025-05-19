@@ -9,8 +9,11 @@ import {
 import Home from './pages/home.jsx'
 import Estoque from './pages/estoque.jsx'
 import Produtos from './pages/produtos.jsx'
-import Login from './pages/login.jsx'  // Página de login
-import Signup from './pages/signup.jsx'  // Página de cadastro
+import Login from './pages/login.jsx'
+import Signup from './pages/signup.jsx'
+import { Usuarios } from './pages/usuarios.jsx'
+import { Historico } from './pages/historico.jsx'
+import { Configuracoes } from './pages/configs.jsx'
 
 const router = createBrowserRouter([
   {
@@ -23,7 +26,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/signup",
-    element: <Signup />,  // Rota para a página de cadastro
+    element: <Signup />,
   },
   {
     path: "/home",
@@ -37,6 +40,18 @@ const router = createBrowserRouter([
     path: "/produtos",
     element: <Produtos />,
   },
+  {
+    path: "/usuarios",
+    element: <Usuarios />,
+  },
+  {
+    path: "/historico",
+    element: <Historico />,
+  },
+  {
+    path: "/configuracoes",
+    element: <Configuracoes />,
+  }
 ]);
 
 createRoot(document.getElementById('root')).render(

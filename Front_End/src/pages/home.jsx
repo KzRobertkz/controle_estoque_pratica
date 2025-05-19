@@ -1,22 +1,19 @@
 import { useEffect, useState } from 'react'
 import Header from "../components/header"
-import axios from 'axios'
 import { Dashboard } from '../components/Dashboard/dashboard'
 import { Sidebar } from '../components/Sidebar/sidebar'
 
 function Home() {
-
   return (
-    <div className='grid gap-4 p-4 grid-cols-[220px,_1fr]'>
+    <div className="min-h-screen">
       <Header />
-      <Sidebar />
-      <Dashboard />
+      <div className="grid grid-cols-[220px,1fr] gap-2 p-2">
+        <Sidebar />
+        <Dashboard />
+      </div>
     </div>
   )
 }
 
-
-
 export default Home
 
-  

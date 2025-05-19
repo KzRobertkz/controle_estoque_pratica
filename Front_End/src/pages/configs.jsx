@@ -1,0 +1,67 @@
+import Header from "../components/header"
+import { Sidebar } from "../components/Sidebar/sidebar"
+import { FiSettings } from "react-icons/fi"
+
+export const Configuracoes = () => {
+  return (
+    <div className="min-h-screen">
+      <Header />
+      <div className="grid grid-cols-[220px,1fr] gap-2 p-2">
+        <Sidebar />
+        <div className="rounded-lg bg-white pb-3 shadow h-[calc(100vh-6rem)] overflow-y-auto mt-20 w-full">
+          <div className='border-b border-stone-400 px-4 mb-4 pb-4 sticky bg-white z-10'>
+            <div className='flex items-center justify-between p-0.5'>
+              <div>
+                <h3 className='flex items-center gap-1.5 py-5 font-medium text-stone-600'>
+                  <FiSettings className="text-stone-500" />
+                  Configurações do Sistema
+                </h3>
+              </div>
+            </div>
+          </div>
+
+        {/* Área de conteúdo com rolagem */}
+          <div className='px-4'>
+            <div className='grid grid-cols-12 gap-4 w-full'>
+              <div className='col-span-12 p-4 border border-stone-400 rounded-md w-full'>
+                <div className='mb-4 flex items-center justify-between'>
+                  <h3 className='text-sm text-stone-600 font-semibold flex items-center gap-2'>
+                    Configurações Gerais
+                  </h3>
+                </div>
+                
+                <div className="space-y-4">
+                  {[...Array(10)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-lg p-4 border border-stone-200 w-full">
+                      <h2>Configuração {i + 1}</h2>
+                      <p className="text-stone-600">Descrição da configuração {i + 1}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className='px-4 py-4'>
+            <div className='grid grid-cols-12 gap-4 w-full'>
+              <div className='col-span-12 p-4 border border-stone-400 rounded-md w-full'>
+                <div className='mb-4 flex items-center justify-between'>
+                  <h3 className='text-sm text-stone-600 font-semibold flex items-center gap-2'>
+                    Configurações do tema
+                  </h3>
+                </div>
+                
+                <div className="space-y-4">
+                    <div className="bg-white rounded-lg p-4  border border-stone-200 w-full">
+                      <h2>Configuração </h2>
+                      <p className="text-stone-600 ">Descrição da configuração</p>
+                    </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
