@@ -1,5 +1,7 @@
 import React from 'react'
 import { FiHome, FiUsers } from 'react-icons/fi'
+import { MdHistory } from "react-icons/md";
+import { DiAptana } from "react-icons/di";
 
 export const RouteSelect = () => {
   return (
@@ -12,9 +14,22 @@ export const RouteSelect = () => {
 
         <Route 
           Icon={FiUsers} 
-          title="Team" 
+          title="Usuários" 
           selected={false} 
         />
+
+        <Route 
+          Icon={MdHistory} 
+          title="Histórico" 
+          selected={false} 
+        />
+
+        <Route 
+          Icon={DiAptana} 
+          title="Configurações" 
+          selected={false} 
+        />
+
     </div>
   )
 }
