@@ -59,8 +59,29 @@ const TableHead = () => {
 }
 
 const TableRow = ({ item }) => {
+  console.log('Item completo:', item); // Debug do objeto completo
+  
   const formatarData = (data) => {
-    return new Date(data).toLocaleDateString('pt-BR');
+    try {
+      // Primeiro verifica se a data é válida
+      if (!data) return 'Data não disponível';
+      
+      // Converte a string ISO para objeto Date
+      const date = new Date(data);
+      
+      // Verifica se a data é válida
+      if (isNaN(date.getTime())) return 'Data inválida';
+      
+      // Formata a data no padrão brasileiro
+      return new Intl.DateTimeFormat('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'short'
+      }).format(date);
+      
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return 'Data inválida';
+    }
   };
 
   const formatarPreco = (preco) => {
@@ -74,7 +95,7 @@ const TableRow = ({ item }) => {
     <tr className='text-sm text-stone-600 border-t border-stone-200'>
       <td className='p-1.5 text-stone-500'>#{item.id}</td>
       <td className='p-1.5'>{item.name}</td>
-      <td className='p-1.5'>{formatarData(item.created_at)}</td>
+      <td className='p-1.5'>{formatarData(item.createdAt)}</td> {/* Alterado de created_at para createdAt */}
       <td className='p-1.5'>{formatarPreco(item.price)}</td>
     </tr>
   )
