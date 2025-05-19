@@ -8,12 +8,12 @@ export const Configuracoes = () => {
       <Header />
       <div className="grid grid-cols-[220px,1fr] gap-2 p-2">
         <Sidebar />
-        <div className="rounded-lg bg-white pb-3 shadow h-[calc(100vh-6rem)] overflow-y-auto mt-20 w-full">
+        <div className="rounded-lg bg-white pb-3 shadow h-[calc(100vh-6rem)] overflow-y-auto mt-20 w-full scrollbar-hide">
           <div className='border-b border-stone-400 px-4 mb-4 pb-4 sticky bg-white z-10'>
             <div className='flex items-center justify-between p-0.5'>
               <div>
                 <h3 className='flex items-center gap-1.5 py-5 font-medium text-stone-600'>
-                  <FiSettings className="text-stone-500" />
+                  <FiSettings className="text-stone-500 text-xl" />
                   Configurações do Sistema
                 </h3>
               </div>
@@ -31,9 +31,8 @@ export const Configuracoes = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  {[...Array(10)].map((_, i) => (
+                  {[...Array(7)].map((_, i) => (
                     <div key={i} className="bg-white rounded-lg p-4 border border-stone-200 w-full">
-                      <h2>Configuração {i + 1}</h2>
                       <p className="text-stone-600">Descrição da configuração {i + 1}</p>
                     </div>
                   ))}
@@ -53,8 +52,12 @@ export const Configuracoes = () => {
                 
                 <div className="space-y-4">
                     <div className="bg-white rounded-lg p-4  border border-stone-200 w-full">
-                      <h2>Configuração </h2>
-                      <p className="text-stone-600 ">Descrição da configuração</p>
+                      <button>switch</button>
+                      <p className="text-stone-600 ">Claro ou Escuro</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4  border border-stone-200 w-full">
+                      <button>Cores</button>
+                      <p className="text-stone-600 ">Escolha uma cor tema</p>
                     </div>
                 </div>
               </div>
