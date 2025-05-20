@@ -4,6 +4,7 @@ import Header from "../components/header"
 import { Sidebar } from "../components/Sidebar/sidebar"
 import { MdOutlineInventory2 } from "react-icons/md"
 import { EditModal } from '../components/modal/editmodal';
+import { DetailsModal } from '../components/modal/detailsmodal';
 
 export const Produtos = () => {
   const [produtos, setProdutos] = useState([]);
@@ -11,6 +12,8 @@ export const Produtos = () => {
   const [error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     const fetchProdutos = async () => {
@@ -95,6 +98,11 @@ export const Produtos = () => {
     }
   };
 
+  const handleShowDetails = (produto) => {
+    setSelectedProduct(produto);
+    setIsDetailsModalOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen">
@@ -139,7 +147,7 @@ export const Produtos = () => {
               </div>
 
               <div>
-                <button>
+                <button className="px-4 py-2 bg-stone-300 text-stone-800 rounded-md hover:text-stone-600 hover:bg-stone-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-stone-300">
                   Nova Categoria
                 </button>
               </div>
@@ -161,18 +169,21 @@ export const Produtos = () => {
                       <p className="text-stone-600">Categoria: {produto.category}</p>
                       <p className="text-lg font-medium text-stone-700">{formatarPreco(produto.price)}</p>
                       <div className="mt-4 flex justify-end gap-3">
-                        <button className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200">
+                        <button 
+                          onClick={() => handleShowDetails(produto)}
+                          className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-stone-300"
+                        >
                           Detalhes
                         </button>
                         <button 
                           onClick={() => handleEdit(produto)}
-                          className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200"
+                          className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-stone-300"
                         >
                           Editar
                         </button>
                         <button 
                           onClick={() => handleDelete(produto.id)}
-                          className="px-4 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors duration-200"
+                          className="px-4 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
                         >
                           Excluir
                         </button>
@@ -198,6 +209,14 @@ export const Produtos = () => {
         produto={editingProduct}
         onSave={handleUpdate}
         onChange={setEditingProduct}
+      />
+      <DetailsModal 
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        produto={selectedProduct}
       />
     </div>
   );
