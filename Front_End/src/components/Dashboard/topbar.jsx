@@ -62,16 +62,16 @@ export const Topbar = () => {
     <div className='border-b border-stone-400 px-4 mb-4 mt-2 pb-4'>
       <div className='flex items-center justify-between p-0.5'>
         <div>
-          <span className='text-sm font-bold block text-zinc-700'>
+          <span className='text- font-bold block text-zinc-700'>
             Bem vindo, {user?.fullName?.split(' ').slice(0, 2).join(' ')}
           </span>
-          <span className='text-xs block text-zinc-500'>{dataAtual}</span>
+          <span className='text-xs block text-zinc-600'>{dataAtual}</span>
         </div>
 
         <div className='relative'>
           <button 
             onClick={handleCalendarClick}
-            className='flex text-sm items-center gap-2 bg-zinc-400 transition-colors hover:bg-zinc-500 px-3 py-2 rounded'
+            className='flex text-sm items-center gap-2 bg-zinc-700 transition-colors hover:bg-zinc-500 px-3 py-2 rounded focus:outline-none'
           >
             <FiCalendar />
             <span>{formatarDataBotao(dataSelecionada)}</span>

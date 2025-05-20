@@ -122,18 +122,46 @@ export default class ProductsController {
     try {
       const recentProducts = await Product
         .query()
-        .orderBy('created_at', 'desc')
-        .limit(2) 
+        .orderBy('id', 'desc') // Ordenação por ID decrescente
+        .orderBy('created_at', 'desc') // Ordenação secundária por data
+        .limit(2) // limite para 2 produtos mais recentes
+        .select(['id', 'name', 'price', 'created_at'])
         .exec()
+      
+      // Log para debug
+      console.log('Produtos recentes:', recentProducts)
       
       return response.ok(recentProducts)
     } catch (error) {
-      console.error('Erro detalhado:', error)
+      console.error('Erro ao buscar produtos recentes:', error)
       return response.internalServerError({
         message: 'Erro ao buscar produtos recentes',
         error: error.message
       })
     }
   }
+
+  public async getHistory({ response }: HttpContext) {
+    try {
+      const recentProductsHistory = await Product
+        .query()
+        .orderBy('id', 'desc') // Ordena primariamente pelo id
+        .select(['id', 'name', 'price', 'created_at'])
+        .limit(20) // limite para 20 itens no histórico
+        .exec()
+      
+      // Log para debug
+      console.log('Histórico de produtos:', recentProductsHistory)
+      
+      return response.ok(recentProductsHistory)
+    } catch (error) {
+      console.error('Erro ao buscar histórico de produtos:', error)
+      return response.internalServerError({
+        message: 'Erro ao buscar histórico de produtos',
+        error: error.message
+      })
+    }
+  }
+
 }
 

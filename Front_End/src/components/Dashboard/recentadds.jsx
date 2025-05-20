@@ -95,7 +95,7 @@ const TableRow = ({ item }) => {
     <tr className='text-sm text-stone-600 border-t border-stone-200'>
       <td className='p-1.5 text-stone-500'>#{item.id}</td>
       <td className='p-1.5'>{item.name}</td>
-      <td className='p-1.5'>{formatarData(item.createdAt)}</td> {/* Alterado de created_at para createdAt */}
+      <td className='p-1.5'>{formatarData(item.createdAt)}</td>
       <td className='p-1.5'>{formatarPreco(item.price)}</td>
     </tr>
   )
