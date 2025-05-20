@@ -19,9 +19,10 @@ export const Produtos = () => {
             Authorization: `Bearer ${token}`
           }
         });
-        console.log('Dados da API:', response.data); // log
-        // Aqui está a correção - acessando response.data.data
-        setProdutos(Array.isArray(response.data.data) ? response.data.data : []);
+        
+        console.log('Dados dos produtos:', response.data.data); //  debug
+        const produtosOrdenados = response.data.data.sort((a, b) => b.id - a.id);
+        setProdutos(Array.isArray(produtosOrdenados) ? produtosOrdenados : []);
       } catch (error) {
         console.error('Erro ao buscar produtos:', error);
         setError('Erro ao carregar produtos');
@@ -36,8 +37,33 @@ export const Produtos = () => {
   const formatarPreco = (preco) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
-    }).format(preco);
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(parseFloat(preco));
+  };
+
+  const handleDelete = async (id) => {
+    // Confirmação antes de excluir
+    const confirmacao = window.confirm('Tem certeza que deseja excluir este produto?');
+    
+    if (confirmacao) {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(`http://localhost:3333/products/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        // Atualiza a lista removendo o produto excluído
+        setProdutos(produtos.filter(produto => produto.id !== id));
+        alert('Produto excluído com sucesso!');
+      } catch (error) {
+        console.error('Erro ao excluir produto:', error);
+        alert('Erro ao excluir produto');
+      }
+    }
   };
 
   if (isLoading) {
@@ -82,6 +108,12 @@ export const Produtos = () => {
                   Produtos
                 </h3>
               </div>
+
+              <div>
+                <button>
+                  Nova Categoria
+                </button>
+              </div>
             </div>
           </div>
 
@@ -96,7 +128,7 @@ export const Produtos = () => {
                     <div className="flex flex-col gap-2">
                       <h4 className="text-lg font-semibold text-stone-700">{produto.name}</h4>
                       <p className="text-stone-600">Código: #{produto.id}</p>
-                      <p className="text-stone-600">Quantidade: {produto.quantity}</p>
+                      <p className="text-stone-600">Quantidade: {produto.stock}</p>
                       <p className="text-stone-600">Categoria: {produto.category}</p>
                       <p className="text-lg font-medium text-stone-700">{formatarPreco(produto.price)}</p>
                       <div className="mt-4 flex justify-end gap-3">
@@ -106,7 +138,10 @@ export const Produtos = () => {
                         <button className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200">
                           Editar
                         </button>
-                        <button className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200">
+                        <button 
+                          onClick={() => handleDelete(produto.id)}
+                          className="px-4 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors duration-200"
+                        >
                           Excluir
                         </button>
                       </div>
