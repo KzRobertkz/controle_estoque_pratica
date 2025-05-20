@@ -65,9 +65,10 @@ function Estoque() {
       const data = Array.isArray(res.data.data) ? res.data.data : [];
       const metaData = res.data.meta || {};
       
-      console.log("Meta antes de atualizar:", metaData); // Debug
-
-      setProducts(data);
+      // Ordena os produtos por ID em ordem decrescente
+      const sortedData = [...data].sort((a, b) => b.id - a.id);
+      
+      setProducts(sortedData);
       setMeta({
         currentPage: Number(metaData.currentPage || pageNumber),
         lastPage: Number(metaData.lastPage || Math.ceil(data.length / 10)),
@@ -75,14 +76,6 @@ function Estoque() {
         perPage: Number(metaData.perPage || 10),
         firstPage: Number(metaData.firstPage || 1)
       });
-
-      console.log("Meta após atualizar:", {
-        currentPage: Number(metaData.currentPage || pageNumber),
-        lastPage: Number(metaData.lastPage || Math.ceil(data.length / 10)),
-        total: Number(metaData.total || data.length),
-        perPage: Number(metaData.perPage || 10),
-        firstPage: Number(metaData.firstPage || 1)
-      }); // Debug
 
       setError("");
     } catch (err) {

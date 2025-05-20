@@ -4,11 +4,69 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 export const DetailsModal = ({ isOpen, onClose, produto }) => {
   if (!isOpen || !produto) return null;
 
-  // Dados simulados para o gráfico - você deve substituir por dados reais
+  // Função para obter o nome do mês em português
+  const getNomeMes = (numeroMes) => {
+    const meses = [
+      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+    ];
+    return meses[numeroMes];
+  };
+
+  // Obtém o mês atual e os dois meses anteriores
+  const dataAtual = new Date();
+  const mesAtual = dataAtual.getMonth();
+  const anoAtual = dataAtual.getFullYear();
+
+  // Função auxiliar para calcular mês anterior
+  const getMesAnterior = (mes, quantidadeMeses) => {
+    let novoMes = mes - quantidadeMeses;
+    let novoAno = anoAtual;
+
+    // Se o novo mês for negativo, ajusta o mês e o ano
+    if (novoMes < 0) {
+      novoMes = 12 + novoMes; // Converte para mês positivo
+      novoAno = anoAtual - 1;
+    }
+
+    return { mes: novoMes, ano: novoAno };
+  };
+
+  // Cria array com os últimos 3 meses
   const dadosGrafico = [
-    { mes: 'Jan', preco: produto.price - 10, estoque: produto.stock - 5 },
-    { mes: 'Fev', preco: produto.price - 5, estoque: produto.stock - 3 },
-    { mes: 'Mar', preco: produto.price, estoque: produto.stock }
+    {
+      mes: `${getNomeMes(getMesAnterior(mesAtual, 2).mes)}/${getMesAnterior(mesAtual, 2).ano}`,
+      numeroMes: getMesAnterior(mesAtual, 2).mes,
+      ano: getMesAnterior(mesAtual, 2).ano,
+      preco: produto.historicoPre?.find(h => 
+        h.mes === getMesAnterior(mesAtual, 2).mes && 
+        h.ano === getMesAnterior(mesAtual, 2).ano
+      )?.preco || null,
+      estoque: produto.historicoPre?.find(h => 
+        h.mes === getMesAnterior(mesAtual, 2).mes && 
+        h.ano === getMesAnterior(mesAtual, 2).ano
+      )?.estoque || null
+    },
+    {
+      mes: `${getNomeMes(getMesAnterior(mesAtual, 1).mes)}/${getMesAnterior(mesAtual, 1).ano}`,
+      numeroMes: getMesAnterior(mesAtual, 1).mes,
+      ano: getMesAnterior(mesAtual, 1).ano,
+      preco: produto.historicoPre?.find(h => 
+        h.mes === getMesAnterior(mesAtual, 1).mes && 
+        h.ano === getMesAnterior(mesAtual, 1).ano
+      )?.preco || null,
+      estoque: produto.historicoPre?.find(h => 
+        h.mes === getMesAnterior(mesAtual, 1).mes && 
+        h.ano === getMesAnterior(mesAtual, 1).ano
+      )?.estoque || null
+    },
+    {
+      mes: `${getNomeMes(mesAtual)}/${anoAtual}`,
+      numeroMes: mesAtual,
+      ano: anoAtual,
+      preco: produto.price,
+      estoque: produto.stock
+    }
   ];
 
   return (
@@ -64,7 +122,7 @@ export const DetailsModal = ({ isOpen, onClose, produto }) => {
                     <XAxis dataKey="mes" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="preco" fill="#8884d8" name="Preço" />
+                    <Bar dataKey="preco" fill="#8884d8" name="Preço R$" />
                     <Bar dataKey="estoque" fill="#82ca9d" name="Estoque" />
                   </BarChart>
                 </ResponsiveContainer>
