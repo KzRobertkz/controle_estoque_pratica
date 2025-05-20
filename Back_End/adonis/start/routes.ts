@@ -32,6 +32,7 @@ router
   .group(() => {
     router.get('/products', '#controllers/products_controller.index')
     router.get('/products/recent', '#controllers/products_controller.getRecent')
+    router.get('/products/recent/history', '#controllers/products_controller.getHistory')
 
     router.post('/products', '#controllers/products_controller.store')
     router.put('/products/:id', '#controllers/products_controller.update')  

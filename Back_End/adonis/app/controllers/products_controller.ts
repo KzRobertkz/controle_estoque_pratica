@@ -1,6 +1,7 @@
 // app/controllers/products_controller.js
 import type { HttpContext } from '@adonisjs/core/http'
 import Product from '#models/product'
+import { idText } from 'typescript'
 
 export default class ProductsController {
   async index({ request, response }: HttpContext) {
@@ -140,5 +141,28 @@ export default class ProductsController {
       })
     }
   }
+
+  public async getHistory({ response }: HttpContext) {
+    try {
+      const recentProductsHistory = await Product
+        .query()
+        .orderBy('id', 'desc') // Ordena primariamente pela data de criação
+        .select(['id', 'name', 'price', 'created_at'])
+        .limit(20) // Aumenta o limite para 20 itens no histórico
+        .exec()
+      
+      // Log para debug
+      console.log('Histórico de produtos:', recentProductsHistory)
+      
+      return response.ok(recentProductsHistory)
+    } catch (error) {
+      console.error('Erro ao buscar histórico de produtos:', error)
+      return response.internalServerError({
+        message: 'Erro ao buscar histórico de produtos',
+        error: error.message
+      })
+    }
+  }
+
 }
 
