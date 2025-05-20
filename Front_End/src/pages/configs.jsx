@@ -1,6 +1,6 @@
 import Header from "../components/header"
 import { Sidebar } from "../components/Sidebar/sidebar"
-import { FiSettings } from "react-icons/fi"
+import { FiSettings, FiAlertTriangle } from "react-icons/fi"
 
 export const Configuracoes = () => {
   return (
@@ -52,13 +52,49 @@ export const Configuracoes = () => {
                 
                 <div className="space-y-6">
                     <div className="bg-white rounded-lg p-6 border border-stone-200 w-full">
-                      <button className="text-base">switch</button>
+                      <button className="text-sm p-2 font-medium">switch</button>
                       <p className="text-base text-stone-600">Claro ou Escuro</p>
                     </div>
                     <div className="bg-white rounded-lg p-6 border border-stone-200 w-full">
-                      <button className="text-base">Cores</button>
+                      <button className="text-sm p-2 font-medium">Cores</button>
                       <p className="text-base text-stone-600">Escolha uma cor tema</p>
                     </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-2 mb-4">
+              <FiAlertTriangle className="text-red-500 text-2xl" />
+              <h3 className="text-xl font-bold text-red-500">Área de Risco</h3>
+            </div>
+            
+            <div className='grid grid-cols-12 gap-4 w-full'>
+              <div className='col-span-12 p-4 border-2 border-red-500 rounded-md w-full bg-red-50'>
+                <div className='mb-4 flex items-center justify-between'>
+                  <h3 className='text-lg font-semibold flex items-center gap-3 text-stone-700'>
+                    Configurações do Usuário
+                  </h3>
+                </div>
+                
+                <div className="space-y-6">
+                  <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-50 transition-colors duration-200">
+                    <button className="text-sm p-2 font-medium">Editar senha</button>
+                    <p className="text-base text-stone-600">Definir uma nova senha</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-50 transition-colors duration-200">
+                    <button className="text-sm p-2 font-medium">Editar Nome Completo</button>
+                    <p className="text-base text-stone-600">Editar o nome completo</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-50 transition-colors duration-200">
+                    <button className="text-sm p-2 font-medium">Editar E-mail</button>
+                    <p className="text-base text-stone-600">Editar o endereço de E-mail</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-6 border border-red-400 w-full hover:bg-red-50 transition-colors duration-200">
+                    <button className="text-sm bg-red-500 p-2 font-medium hover:bg-red-700 hover:text-red-300">Excluir Usuário</button>
+                    <p className="text-base text-stone-600">Excluir usuário por completo</p>
+                  </div>
                 </div>
               </div>
             </div>
