@@ -1,7 +1,6 @@
 // app/controllers/products_controller.js
 import type { HttpContext } from '@adonisjs/core/http'
 import Product from '#models/product'
-import { idText } from 'typescript'
 
 export default class ProductsController {
   async index({ request, response }: HttpContext) {
@@ -146,9 +145,9 @@ export default class ProductsController {
     try {
       const recentProductsHistory = await Product
         .query()
-        .orderBy('id', 'desc') // Ordena primariamente pela data de criação
+        .orderBy('id', 'desc') // Ordena primariamente pelo id
         .select(['id', 'name', 'price', 'created_at'])
-        .limit(20) // Aumenta o limite para 20 itens no histórico
+        .limit(20) // limite para 20 itens no histórico
         .exec()
       
       // Log para debug
