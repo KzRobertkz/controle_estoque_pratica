@@ -213,10 +213,13 @@ function Estoque() {
       <Header />
       <div className="grid grid-cols-[220px,1fr] gap-2 p-2">
         <Sidebar />
-        <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide pl-40 pr-40">
-          <div className="p-6 max-w-4xl mx-auto">
-            <h1 className="text-2xl flex justify-center font-semibold text-blue-700 mb-4">Estoque de Produtos</h1>
+        <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide px-96">
+          <div className="p-6">
+            <h1 className="text-2xl flex justify-center font-semibold text-stone-700 mb-4">
+              Estoque de Produtos
+            </h1>
 
+            {/* Mensagens */}
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 {error}
@@ -229,6 +232,7 @@ function Estoque() {
               </div>
             )}
 
+            {/* Barra de pesquisa */}
             <div className="mb-4">
               <input
                 type="text"
@@ -244,23 +248,23 @@ function Estoque() {
                   newParams.set("page", "1"); // Reset to page 1 on search change
                   setSearchParams(newParams);
                 }}
-                className="p-2 mt-6 border rounded w-full"
+                className="p-3 mt-6 rounded w-full text-lg placeholder-gray-400 text-white bg-gray-950 hover:bg-gray-900 focus:outline-none focus:bg-gray-900 transition-colors"
               />
             </div>
 
-            {/* Formulário para Adicionar/Editar Produto */}
-            <div className="bg-white p-6 rounded-lg shadow mb-6">
-              <h2 className="text-xl font-semibold mb-4">
+            {/* Formulário */}
+            <div className="bg-white text-stone-600 p-8 rounded-lg shadow-lg mb-8">
+              <h2 className="text-2xl font-semibold mb-6">
                 {editingProductId ? "Editar Produto" : "Adicionar Novo Produto"}
               </h2>
               <form onSubmit={handleAddProduct}>
-                <div className="grid grid-cols-1 gap-4 mb-4">
+                <div className="grid grid-cols-2 gap-6 mb-6">
                   <input
                     type="text"
                     placeholder="Nome do Produto"
                     value={newProduct.name}
                     onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                    className="p-2 border rounded"
+                    className="p-3 rounded-lg col-span-2 text-lg text-white bg-gray-950 hover:bg-gray-900 placeholder-gray-400 focus:outline-none focus:bg-gray-900 transition-colors"
                     required
                   />
                   <input
@@ -268,14 +272,14 @@ function Estoque() {
                     placeholder="Descrição"
                     value={newProduct.description}
                     onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                    className="p-2 border rounded"
+                    className="p-3 rounded-lg col-span-2 text-lg text-white bg-gray-950 hover:bg-gray-900 placeholder-gray-400 focus:outline-none focus:bg-gray-900 transition-colors"
                   />
                   <input
                     type="number"
                     placeholder="Preço"
                     value={newProduct.price}
                     onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                    className="p-2 border rounded"
+                    className="p-3 rounded-lg text-lg text-white bg-gray-950 hover:bg-gray-900 placeholder-gray-400 focus:outline-none focus:bg-gray-900 transition-colors"
                     required
                   />
                   <input
@@ -283,7 +287,7 @@ function Estoque() {
                     placeholder="Estoque"
                     value={newProduct.stock}
                     onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                    className="p-2 border rounded"
+                    className="p-3 rounded-lg text-lg text-white bg-gray-950 hover:bg-gray-900 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
                     required
                   />
                 </div>
@@ -291,7 +295,7 @@ function Estoque() {
                 <div className="flex gap-4">
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                    className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition focus:outline-none"
                   >
                     {editingProductId ? "Atualizar Produto" : "Adicionar Produto"}
                   </button>
@@ -300,7 +304,7 @@ function Estoque() {
                     <button
                       type="button"
                       onClick={handleCancelEdit}
-                      className="px-6 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 transition"
+                      className="px-6 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 transition focus:outline-none"
                     >
                       Cancelar
                     </button>
@@ -310,29 +314,29 @@ function Estoque() {
             </div>
 
             {/* Lista de Produtos */}
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-6">
               {products.length > 0 ? (
                 products.map((product) => (
-                  <div key={product.id} className="bg-white p-4 rounded-lg shadow hover:shadow-md transition">
+                  <div key={product.id} className="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition">
                     <div className="flex justify-between items-start">
-                      <div>
-                        <h2 className="text-xl font-bold text-gray-800">{product.name}</h2>
-                        <p className="text-gray-600 mb-2">{product.description}</p>
-                        <p className="text-gray-800">
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-3">{product.name}</h2>
+                        <p className="text-gray-600 mb-4 text-lg">{product.description}</p>
+                        <p className="text-gray-800 text-lg">
                           Preço: <span className="text-green-600 font-medium">R$ {Number(product.price).toFixed(2)}</span>
                         </p>
-                        <p className="text-gray-800">Estoque: {product.stock} unidades</p>
+                        <p className="text-gray-800 text-lg">Estoque: {product.stock} unidades</p>
                       </div>
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleEditProduct(product)}
-                          className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
+                          className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
                         >
                           Editar
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                          className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
                         >
                           Excluir
                         </button>
@@ -348,7 +352,7 @@ function Estoque() {
                     <button
                       onClick={() => goToPage(page - 1)}
                       disabled={page <= 1}
-                      className={`px-4 py-2 rounded ${
+                      className={`px-4 py-2 rounded focus:outline-none ${
                         page <= 1
                           ? "bg-gray-300 text-gray-700 cursor-not-allowed"
                           : "bg-blue-600 text-white hover:bg-blue-700"
@@ -359,7 +363,7 @@ function Estoque() {
 
                     <button
                       onClick={() => fetchProducts(page, searchQuery)}
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none"
                     >
                       Recarregar
                     </button>
@@ -376,7 +380,7 @@ function Estoque() {
                   <button
                     onClick={() => goToPage(meta.currentPage - 1)}
                     disabled={meta.currentPage <= 1}
-                    className={`px-4 py-2 rounded ${
+                    className={`px-4 py-2 rounded focus:outline-none ${
                       meta.currentPage <= 1
                         ? "bg-gray-300 cursor-not-allowed"
                         : "bg-blue-600 text-white hover:bg-blue-700"
@@ -389,7 +393,7 @@ function Estoque() {
                     <button
                       key={pageNum}
                       onClick={() => goToPage(pageNum)}
-                      className={`px-4 py-2 rounded ${
+                      className={`px-4 py-2 rounded focus:outline-none ${
                         pageNum === meta.currentPage
                           ? "bg-blue-600 text-white"
                           : "bg-gray-200 hover:bg-gray-300"
@@ -402,7 +406,7 @@ function Estoque() {
                   <button
                     onClick={() => goToPage(meta.currentPage + 1)}
                     disabled={meta.currentPage >= meta.lastPage}
-                    className={`px-4 py-2 rounded ${
+                    className={`px-4 py-2 rounded focus:outline-none ${
                       meta.currentPage >= meta.lastPage
                         ? "bg-gray-300 cursor-not-allowed"
                         : "bg-blue-600 text-white hover:bg-blue-700"
