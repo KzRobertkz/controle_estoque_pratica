@@ -8,7 +8,7 @@ import {
 } from "react-router-dom"
 import Home from './pages/home.jsx'
 import Estoque from './pages/estoque.jsx'
-import Produtos from './pages/produtos.jsx'
+import { Produtos } from './pages/produtos.jsx'
 import Login from './pages/login.jsx'
 import Signup from './pages/signup.jsx'
 import { Usuarios } from './pages/usuarios.jsx'
