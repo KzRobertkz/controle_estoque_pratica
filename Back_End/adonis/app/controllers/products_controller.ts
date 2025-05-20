@@ -122,13 +122,18 @@ export default class ProductsController {
     try {
       const recentProducts = await Product
         .query()
-        .orderBy('created_at', 'desc')
-        .limit(2) 
+        .orderBy('id', 'desc') // Ordenação por ID decrescente
+        .orderBy('created_at', 'desc') // Ordenação secundária por data
+        .limit(2) // limite para 2 produtos mais recentes
+        .select(['id', 'name', 'price', 'created_at'])
         .exec()
+      
+      // Log para debug
+      console.log('Produtos recentes:', recentProducts)
       
       return response.ok(recentProducts)
     } catch (error) {
-      console.error('Erro detalhado:', error)
+      console.error('Erro ao buscar produtos recentes:', error)
       return response.internalServerError({
         message: 'Erro ao buscar produtos recentes',
         error: error.message
