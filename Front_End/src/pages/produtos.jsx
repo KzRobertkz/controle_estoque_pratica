@@ -3,11 +3,14 @@ import axios from 'axios'
 import Header from "../components/header"
 import { Sidebar } from "../components/Sidebar/sidebar"
 import { MdOutlineInventory2 } from "react-icons/md"
+import { EditModal } from '../components/modal/editmodal';
 
 export const Produtos = () => {
   const [produtos, setProdutos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
 
   useEffect(() => {
     const fetchProdutos = async () => {
@@ -44,7 +47,6 @@ export const Produtos = () => {
   };
 
   const handleDelete = async (id) => {
-    // Confirmação antes de excluir
     const confirmacao = window.confirm('Tem certeza que deseja excluir este produto?');
     
     if (confirmacao) {
@@ -56,13 +58,40 @@ export const Produtos = () => {
           }
         });
         
-        // Atualiza a lista removendo o produto excluído
         setProdutos(produtos.filter(produto => produto.id !== id));
         alert('Produto excluído com sucesso!');
       } catch (error) {
         console.error('Erro ao excluir produto:', error);
         alert('Erro ao excluir produto');
       }
+    }
+  };
+
+  const handleEdit = (produto) => {
+    setEditingProduct(produto);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`http://localhost:3333/products/${editingProduct.id}`, editingProduct, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      setProdutos(produtos.map(p => 
+        p.id === editingProduct.id ? editingProduct : p
+      ));
+      
+      setIsEditModalOpen(false);
+      setEditingProduct(null);
+      alert('Produto atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error);
+      alert('Erro ao atualizar produto');
     }
   };
 
@@ -135,7 +164,10 @@ export const Produtos = () => {
                         <button className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200">
                           Detalhes
                         </button>
-                        <button className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200">
+                        <button 
+                          onClick={() => handleEdit(produto)}
+                          className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200"
+                        >
                           Editar
                         </button>
                         <button 
@@ -157,6 +189,16 @@ export const Produtos = () => {
           </div>
         </div>
       </div>
+      <EditModal 
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingProduct(null);
+        }}
+        produto={editingProduct}
+        onSave={handleUpdate}
+        onChange={setEditingProduct}
+      />
     </div>
   );
 };
