@@ -140,14 +140,14 @@ export const Produtos = () => {
           <div className='border-b border-stone-400 px-4 mb-4 pb-4 sticky top-0 bg-white z-10'>
             <div className='flex items-center justify-between p-0.5'>
               <div>
-                <h3 className='flex items-center gap-3 py-6 font-semibold text-xl text-stone-600'>
+                <h3 className='flex items-center gap-3 py-6 font-semibold text-xl text-stone-700'>
                   <MdOutlineInventory2 className="text-stone-500 text-3xl" />
                   Produtos
                 </h3>
               </div>
 
               <div>
-                <button className="px-4 py-2 bg-stone-300 text-stone-800 rounded-md hover:text-stone-600 hover:bg-stone-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-stone-300">
+                <button className="px-4 py-2 bg-zinc-700 transition-colors hover:bg-zinc-500 duration-200 focus:outline-none">
                   Nova Categoria
                 </button>
               </div>
@@ -171,19 +171,19 @@ export const Produtos = () => {
                       <div className="mt-4 flex justify-end gap-3">
                         <button 
                           onClick={() => handleShowDetails(produto)}
-                          className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-stone-300"
+                          className="px-4 py-2 bg-stone-400 text-white rounded-md hover:bg-stone-500  transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-stone-300"
                         >
                           Detalhes
                         </button>
                         <button 
                           onClick={() => handleEdit(produto)}
-                          className="px-4 py-2 bg-stone-100 text-stone-600 rounded-md hover:bg-stone-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-stone-300"
+                          className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-200 focus:outline-none focus:ring-2 focus:ring-stone-300"
                         >
                           Editar
                         </button>
                         <button 
                           onClick={() => handleDelete(produto.id)}
-                          className="px-4 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
+                          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
                         >
                           Excluir
                         </button>
