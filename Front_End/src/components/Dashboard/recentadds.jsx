@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { FiClock } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 export const RecentAdds = () => {
   const [recentItems, setRecentItems] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRecentItems = async () => {
@@ -28,9 +30,15 @@ export const RecentAdds = () => {
   return (
     <div className='col-span-12 p-4 border border-stone-400 rounded-md'>
       <div className='mb-4 flex items-center justify-between'>
-        <h3 className='text-sm hover:underline font-semibold flex items-center gap-2'>
-          <FiClock className="text-stone-500" />
+        <h3 className='text-sm font-semibold flex items-center gap-2'>
+          <FiClock className="text-stone-600" />
           Adições Recentes
+        </h3>
+        <h3 
+          onClick={() => navigate('/historico')}
+          className='text-sm text-stone-600 hover:text-stone-900 hover:underline transition-all duration-200 cursor-pointer'
+        >
+          Ver Tudo
         </h3>
       </div>
       <table className='w-full table-auto'>
