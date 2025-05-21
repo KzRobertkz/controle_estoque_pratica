@@ -37,6 +37,29 @@ function Header() {
     fetchUserInfo();
   }, []);
 
+  useEffect(() => {
+    const down = (e) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    }
+    
+    // Adiciona o listener apenas se a pesquisa estiver visível
+    if (hideSearch) {
+      // Se a pesquisa estiver oculta, não faz nada
+      return;
+    }
+
+    // Adiciona o listener quando a pesquisa estiver visível
+    document.addEventListener('keydown', down);
+    
+    // Cleanup: remove o listener ao desmontar ou quando hideSearch mudar
+    return () => {
+      document.removeEventListener('keydown', down);
+    };
+  }, [hideSearch]);
+
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
