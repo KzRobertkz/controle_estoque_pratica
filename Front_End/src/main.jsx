@@ -14,6 +14,7 @@ import Signup from './pages/signup.jsx'
 import { Usuarios } from './pages/usuarios.jsx'
 import { Historico } from './pages/historico.jsx'
 import { Configuracoes } from './pages/configs.jsx'
+import { SearchProvider } from './components/Header/searchcontent.jsx'
 
 const router = createBrowserRouter([
   {
@@ -56,7 +57,9 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <SearchProvider>
+      <RouterProvider router={router} />
+    </SearchProvider>
   </StrictMode>
 )
 

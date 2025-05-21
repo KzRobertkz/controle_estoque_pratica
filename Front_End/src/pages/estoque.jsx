@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from 'axios';
-import Header from "../components/header";
+import Header from "../components/Header/header";
 import { Sidebar } from "../components/Sidebar/sidebar";
 
 import { useSearchParams } from "react-router-dom";
