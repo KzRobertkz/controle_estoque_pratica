@@ -1,8 +1,21 @@
+import { useState } from 'react'
+import { useSearch } from '../components/searchcontent'
 import Header from "../components/header"
 import { Sidebar } from "../components/Sidebar/sidebar"
 import { FiSettings, FiAlertTriangle } from "react-icons/fi"
 
 export const Configuracoes = () => {
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { hideSearch, setHideSearch } = useSearch()
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode)
+  }
+
+  const toggleSearch = () => {
+    setHideSearch(!hideSearch)
+  }
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -25,17 +38,30 @@ export const Configuracoes = () => {
             <div className='grid grid-cols-12 gap-4 w-full'>
               <div className='col-span-12 p-4 border border-stone-400 rounded-md w-full'>
                 <div className='mb-4 flex items-center justify-between'>
-                  <h3 className='text-lg font-semibold flex items-center gap-3 text-stone-700'>
+                  <h3 className='text-lg font-bold flex items-center gap-3 text-stone-700'>
                     Configurações Gerais
                   </h3>
                 </div>
                 
                 <div className="space-y-6">
-                  {[...Array(7)].map((_, i) => (
-                    <div key={i} className="bg-white rounded-lg p-6 border border-stone-200 w-full">
-                      <p className="text-base text-stone-600">Descrição da configuração {i + 1}</p>
+                  <div className="bg-white rounded-lg p-6 border border-stone-200 w-full">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className='text-stone-700 font-medium'>Ocultar Pesquisar</p>
+                        <p className="text-base text-stone-500">Oculta a Barra de pesquisa no cabeçalho</p>
+                      </div>
+                      <button 
+                        onClick={toggleSearch}
+                        className={`relative inline-flex ml-3 h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none
+                          ${hideSearch ? 'bg-blue-600' : 'bg-stone-200'}`}
+                      >
+                        <span
+                          className={`absolute h-5 w-5 rounded-full bg-white transition-all duration-300 ease-in-out
+                            ${hideSearch ? 'left-[calc(100%-1.4rem)]' : 'left-0.5 '}`}
+                        />
+                      </button>
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -45,20 +71,31 @@ export const Configuracoes = () => {
             <div className='grid grid-cols-12 gap-4 w-full'>
               <div className='col-span-12 p-4 border border-stone-400 rounded-md w-full'>
                 <div className='mb-4 flex items-center justify-between'>
-                  <h3 className='text-lg font-semibold flex items-center gap-3 text-stone-700'>
+                  <h3 className='text-lg font-bold flex items-center gap-3 text-stone-700'>
                     Configurações do tema
                   </h3>
                 </div>
                 
                 <div className="space-y-6">
-                    <div className="bg-white rounded-lg p-6 border border-stone-200 w-full">
-                      <button className="text-sm p-2 font-medium">switch</button>
-                      <p className="text-base text-stone-600">Claro ou Escuro</p>
+                  <div className="bg-white rounded-lg p-6 border border-stone-200 w-full">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-base font-medium text-stone-700">Modo {isDarkMode ? 'Claro' : 'Escuro'}</p>
+                        <p className="text-sm text-stone-500">Alterar aparência do sistema</p>
+                      </div>
+                      
+                      <button 
+                        onClick={toggleTheme}
+                        className={`relative inline-flex ml-3 h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none
+                          ${isDarkMode ? 'bg-blue-600' : 'bg-stone-200'}`}
+                      >
+                        <span
+                          className={`absolute h-5 w-5 rounded-full bg-white transition-all duration-300 ease-in-out
+                            ${isDarkMode ? 'left-[calc(100%-1.4rem)]' : 'left-0.5'}`}
+                        />
+                      </button>
                     </div>
-                    <div className="bg-white rounded-lg p-6 border border-stone-200 w-full">
-                      <button className="text-sm p-2 font-medium">Cores</button>
-                      <p className="text-base text-stone-600">Escolha uma cor tema</p>
-                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -79,21 +116,21 @@ export const Configuracoes = () => {
                 </div>
                 
                 <div className="space-y-6">
-                  <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-50 transition-colors duration-200">
-                    <button className="text-sm p-2 font-medium">Editar senha</button>
-                    <p className="text-base text-stone-600">Definir uma nova senha</p>
+                  <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-100 transition-colors duration-200">
+                    <button className="text-sm p-2 font-medium hover:bg-zinc-700 hover:text-gray-200">Editar senha</button>
+                    <p className="text-base text-stone-800">Definir uma nova senha</p>
                   </div>
-                  <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-50 transition-colors duration-200">
-                    <button className="text-sm p-2 font-medium">Editar Nome Completo</button>
-                    <p className="text-base text-stone-600">Editar o nome completo</p>
+                  <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-100 transition-colors duration-200">
+                    <button className="text-sm p-2 font-medium hover:bg-zinc-700 hover:text-gray-200">Editar Nome Completo</button>
+                    <p className="text-base text-stone-800">Editar o nome completo</p>
                   </div>
-                  <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-50 transition-colors duration-200">
-                    <button className="text-sm p-2 font-medium">Editar E-mail</button>
-                    <p className="text-base text-stone-600">Editar o endereço de E-mail</p>
+                  <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-100 transition-colors duration-200">
+                    <button className="text-sm p-2 font-medium hover:bg-zinc-700 hover:text-gray-200">Editar E-mail</button>
+                    <p className="text-base text-stone-800">Editar o endereço de E-mail</p>
                   </div>
-                  <div className="bg-white rounded-lg p-6 border border-red-400 w-full hover:bg-red-50 transition-colors duration-200">
+                  <div className="bg-white rounded-lg p-6 border border-red-400 w-full hover:bg-red-100 transition-colors duration-200">
                     <button className="text-sm bg-red-500 p-2 font-medium hover:bg-red-700 hover:text-red-300">Excluir Usuário</button>
-                    <p className="text-base text-stone-600">Excluir usuário por completo</p>
+                    <p className="text-base text-stone-800">Excluir usuário por completo</p>
                   </div>
                 </div>
               </div>
