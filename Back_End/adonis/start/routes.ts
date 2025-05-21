@@ -35,7 +35,9 @@ router
     router.get('/products/recent/history', '#controllers/products_controller.getHistory')
 
     router.post('/products', '#controllers/products_controller.store')
-    router.put('/products/:id', '#controllers/products_controller.update')  
+
+    router.put('/products/:id', '#controllers/products_controller.update') 
+     
     router.delete('/products/:id', '#controllers/products_controller.destroy')
 
   })
