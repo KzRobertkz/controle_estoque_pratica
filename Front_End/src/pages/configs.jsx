@@ -13,7 +13,10 @@ export const Configuracoes = () => {
   }
 
   const toggleSearch = () => {
-    setHideSearch(!hideSearch)
+    const newValue = !hideSearch
+    setHideSearch(newValue)
+    // Opcional: persistir no localStorage
+    localStorage.setItem('hideSearch', JSON.stringify(newValue))
   }
 
   return (

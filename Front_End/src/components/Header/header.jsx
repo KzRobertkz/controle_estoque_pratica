@@ -83,19 +83,29 @@ function Header() {
                 <span>Produtos</span>
               </Link>
 
-              {/* Botão de pesquisa */}
-              <button
-                onClick={() => setCommandOpen(true)}
-                className="py-0 px-0 flex flex-col bg-white text-blue-600 hover:text-blue-800 transition-transform hover:scale-110 focus:outline-none"
+              {/* Botão CMDK com animação de transição */}
+              <div 
+                className={`
+                  transform transition-all duration-300 ease-in-out flex
+                  ${hideSearch 
+                    ? 'opacity-0 scale-95 -translate-x-0 max-w-0' 
+                    : 'opacity-100 scale-100 translate-x-0 max-w-[100px]'
+                  }
+                `}
               >
-                <HiMagnifyingGlass className="text-3xl ml-3" />
-                <div className="flex items-center gap-1">
-                  <span>Pesquisar</span>
-                  <kbd className="hidden sm:inline-flex text-xs border border-gray-400 rounded px-1.5 py-0.5 bg-gray-200 text-gray-700">
-                    ⌘+K / Ctrl+k
-                  </kbd>
-                </div>
-              </button>
+                <button
+                  onClick={() => setCommandOpen(true)}
+                  className="py-0 px-0 flex flex-col bg-white text-blue-600 hover:text-blue-800 transition-transform hover:scale-110 focus:outline-none whitespace-nowrap"
+                >
+                  <HiMagnifyingGlass className="text-3xl ml-4" />
+                  <div className="flex gap-1">
+                    <span>Pesquisar</span>
+                    <kbd className="hidden sm:inline-flex text-xs border border-gray-500 rounded px-1.5 py-0.5 bg-gray-200 text-gray-800">
+                      ⌘+K / Ctrl+k
+                    </kbd>
+                  </div>
+                </button>
+              </div>
             </div>
 
             {/* Nome do usuário + logout */}
