@@ -37,29 +37,6 @@ function Header() {
     fetchUserInfo();
   }, []);
 
-  useEffect(() => {
-    const down = (e) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setCommandOpen((open) => !open);
-      }
-    }
-    
-    // Adiciona o listener apenas se a pesquisa estiver visível
-    if (hideSearch) {
-      // Se a pesquisa estiver oculta, não faz nada
-      return;
-    }
-
-    // Adiciona o listener quando a pesquisa estiver visível
-    document.addEventListener('keydown', down);
-    
-    // Cleanup: remove o listener ao desmontar ou quando hideSearch mudar
-    return () => {
-      document.removeEventListener('keydown', down);
-    };
-  }, [hideSearch]);
-
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -111,8 +88,8 @@ function Header() {
                 className={`
                   transform transition-all duration-300 ease-in-out flex
                   ${hideSearch 
-                    ? 'opacity-0 scale-95 -translate-x-0 max-w-0' 
-                    : 'opacity-100 scale-100 translate-x-0 max-w-[100px]'
+                    ? 'opacity-0 scale-95 -translate-x-0 max-w-0 pointer-events-none invisible' 
+                    : 'opacity-100 scale-100 translate-x-0 max-w-[100px] pointer-events-auto visible'
                   }
                 `}
               >
@@ -124,7 +101,7 @@ function Header() {
                   <div className="flex gap-1">
                     <span>Pesquisar</span>
                     <kbd className="hidden sm:inline-flex text-xs border border-gray-500 rounded px-1.5 py-0.5 bg-gray-200 text-gray-800">
-                      ⌘+K / Ctrl+k
+                      ⌘+K / Ctrl+K
                     </kbd>
                   </div>
                 </button>
