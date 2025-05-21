@@ -1,5 +1,5 @@
 import './App.css'
-import { SearchProvider } from './components/searchcontent'
+import { SearchProvider } from './components/Header/searchcontent'
 // ...outros imports...
 
 function App() {

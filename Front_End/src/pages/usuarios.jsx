@@ -1,4 +1,4 @@
-import Header from "../components/header"
+import Header from "../components/Header/header"
 import { Sidebar } from "../components/Sidebar/sidebar"
 import { FiUsers } from "react-icons/fi"
 

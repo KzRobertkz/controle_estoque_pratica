@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import Header from "../components/header"
+import Header from "../components/Header/header"
 import { Dashboard } from '../components/Dashboard/dashboard'
 import { Sidebar } from '../components/Sidebar/sidebar'
 

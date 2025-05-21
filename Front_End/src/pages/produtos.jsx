@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import Header from "../components/header"
+import Header from "../components/Header/header"
 import { Sidebar } from "../components/Sidebar/sidebar"
 import { MdOutlineInventory2 } from "react-icons/md"
 import { EditModal } from '../components/modal/editmodal';

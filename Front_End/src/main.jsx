@@ -14,7 +14,7 @@ import Signup from './pages/signup.jsx'
 import { Usuarios } from './pages/usuarios.jsx'
 import { Historico } from './pages/historico.jsx'
 import { Configuracoes } from './pages/configs.jsx'
-import { SearchProvider } from './components/searchcontent'
+import { SearchProvider } from './components/Header/searchcontent.jsx'
 
 const router = createBrowserRouter([
   {

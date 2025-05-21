@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useSearch } from '../components/searchcontent'
-import Header from "../components/header"
+import { useSearch } from '../components/Header/searchcontent'
+import Header from "../components/Header/header"
 import { Sidebar } from "../components/Sidebar/sidebar"
 import { FiSettings, FiAlertTriangle } from "react-icons/fi"
 
