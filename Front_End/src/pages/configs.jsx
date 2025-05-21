@@ -155,7 +155,7 @@ export const Configuracoes = () => {
                 <div className="space-y-6">
                   <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-100 transition-colors duration-200">
                     <button 
-                      className="text-sm p-2 font-medium hover:bg-zinc-700 hover:text-gray-200"
+                      className="text-sm p-2 font-medium focus:outline-none hover:bg-zinc-700 hover:text-gray-200"
                       onClick={() => setIsPasswordModalOpen(true)}
                     >
                       Editar senha
@@ -164,7 +164,7 @@ export const Configuracoes = () => {
                   </div>
                   <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-100 transition-colors duration-200">
                     <button 
-                      className="text-sm p-2 font-medium hover:bg-zinc-700 hover:text-gray-200"
+                      className="text-sm p-2 font-medium focus:outline-none hover:bg-zinc-700 hover:text-gray-200"
                       onClick={() => setIsNameModalOpen(true)}
                     >
                       Editar Nome Completo
@@ -173,7 +173,7 @@ export const Configuracoes = () => {
                   </div>
                   <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-100 transition-colors duration-200">
                     <button 
-                      className="text-sm p-2 font-medium hover:bg-zinc-700 hover:text-gray-200"
+                      className="text-sm p-2 font-medium focus:outline-none hover:bg-zinc-700 hover:text-gray-200"
                       onClick={() => setIsEmailModalOpen(true)}
                     >
                       Editar E-mail
