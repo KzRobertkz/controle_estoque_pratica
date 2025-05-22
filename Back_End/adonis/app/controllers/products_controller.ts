@@ -8,7 +8,7 @@ export default class ProductsController {
       const page = Number(request.input('page', 1))  // página atual, default 1
       const search = request.input('search', '')     // texto para buscar
 
-      const limit = 10
+      const limit = 12
       const query = Product.query()
 
       if (search) {
@@ -118,6 +118,8 @@ export default class ProductsController {
     }
   }
 
+
+  // Outras funções
   public async getRecent({ response }: HttpContext) {
     try {
       const recentProducts = await Product
@@ -143,25 +145,64 @@ export default class ProductsController {
 
   public async getHistory({ response }: HttpContext) {
     try {
-      const recentProductsHistory = await Product
-        .query()
-        .orderBy('id', 'desc') // Ordena primariamente pelo id
-        .select(['id', 'name', 'price', 'created_at'])
-        .limit(20) // limite para 20 itens no histórico
-        .exec()
-      
-      // Log para debug
-      console.log('Histórico de produtos:', recentProductsHistory)
-      
-      return response.ok(recentProductsHistory)
+      const products = await Product.query()
+        .orderBy('created_at', 'desc')
+        .limit(50) // Últimos 50 produtos para histórico
+        
+      return response.ok(products)
     } catch (error) {
-      console.error('Erro ao buscar histórico de produtos:', error)
-      return response.internalServerError({
-        message: 'Erro ao buscar histórico de produtos',
-        error: error.message
+      return response.internalServerError({ 
+        message: 'Erro ao buscar histórico', 
+        error: error.message 
       })
     }
   }
+
+  public async getPages({ request, response }: HttpContext) {
+    try {
+      const page = Number(request.input('page', 1))
+      const limit = Number(request.input('limit', 25))
+
+      // Validação básica
+      if (page < 1) {
+        return response.badRequest({ 
+          message: 'Número da página deve ser maior que 0' 
+        })
+      }
+
+      if (limit < 1 || limit > 100) {
+        return response.badRequest({ 
+          message: 'Limite deve estar entre 1 e 100' 
+        })
+      }
+
+      const query = Product.query()
+      query.orderBy('id', 'desc') 
+
+      const products = await query.paginate(page, limit)
+
+      // Estrutura correta baseada no AdonisJS
+      const response_data = {
+        data: products.all(), // ou products (se products já for o array)
+        meta: {
+          currentPage: products.currentPage,
+          firstPage: products.firstPage || 1,
+          lastPage: products.lastPage,
+          perPage: products.perPage,
+          total: products.total
+        }
+      }
+
+      return response.ok(response_data)
+    } catch (error) {
+      console.error('Erro na paginação:', error)
+      return response.internalServerError({ 
+        message: 'Erro ao paginar produtos', 
+        error: error.message 
+      })
+    }
+  }
+
 
 }
 

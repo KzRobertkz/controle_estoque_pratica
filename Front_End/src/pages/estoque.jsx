@@ -23,7 +23,7 @@ function Estoque() {
   const [editingProductId, setEditingProductId] = useState(null);
 
   // Mecanicas de pesquisa
-  const [meta, setMeta] = useState({ currentPage: 1, lastPage: 1, total: 0 });
+  const [meta, setMeta] = useState({ currentPage: 1, lastPage: 1, total: 0, perPage: 10, firstPage: 1 });
   const [searchQuery, setSearchQuery] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const [error, setError] = useState("");
@@ -53,11 +53,20 @@ function Estoque() {
     return config;
   });
 
+  // Função para calcular o range dos itens mostrados
+  const calculateItemRange = () => {
+    if (meta.total === 0) return { start: 0, end: 0 };
+    
+    const start = ((meta.currentPage - 1) * meta.perPage) + 1;
+    const end = Math.min(meta.currentPage * meta.perPage, meta.total);
+    
+    return { start, end };
+  };
 
   // Funções 
   const fetchProducts = async (pageNumber = 1, query = "") => {
     try {
-      console.log(`Fazendo requisição para página com busca "${query}"`);
+      console.log(`Fazendo requisição para página ${pageNumber} com busca "${query}"`);
       
       const res = await api.get("/products", {
         params: { page: pageNumber, search: query },
@@ -89,7 +98,6 @@ function Estoque() {
     }
   };
 
-
   const goToPage = (pageNumber) => {
     if (pageNumber < 1 || pageNumber > meta.lastPage) return;
     
@@ -97,8 +105,6 @@ function Estoque() {
     newParams.set("page", pageNumber.toString());
     setSearchParams(newParams);
   };
-
-
 
   // Efeitos
   // Inicializa o valor de busca a partir dos parâmetros da URL
@@ -112,7 +118,6 @@ function Estoque() {
 
     fetchProducts(newPage, searchFromParams);
   }, [searchParams]);
-
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -151,9 +156,6 @@ function Estoque() {
       setError('Erro ao salvar produto. Verifique os dados e tente novamente.');
     }
   };
-
-  
-
 
   const handleEditProduct = (product) => {
     setNewProduct({
@@ -370,50 +372,112 @@ function Estoque() {
                   </div>
                 </div>
               )}
-            </div> {/* Fechamento do grid de produtos */}
+            </div>
 
             {/* Paginação separada */}
             <div className="mt-6">
               {console.log("Estado atual do meta:", meta)} {/* Debug */}
               {meta.lastPage > 1 && (
-                <div className="flex justify-center gap-2">
-                  <button
-                    onClick={() => goToPage(meta.currentPage - 1)}
-                    disabled={meta.currentPage <= 1}
-                    className={`px-4 py-2 rounded focus:outline-none ${
-                      meta.currentPage <= 1
-                        ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
-                    }`}
-                  >
-                    Anterior
-                  </button>
-
-                  {Array.from({ length: meta.lastPage }, (_, i) => i + 1).map((pageNum) => (
+                <div className="flex flex-col items-center gap-4">
+                  {/* Botões de navegação */}
+                  <div className="flex justify-center gap-2">
                     <button
-                      key={pageNum}
-                      onClick={() => goToPage(pageNum)}
-                      className={`px-4 py-2 rounded focus:outline-none ${
-                        pageNum === meta.currentPage
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-200 hover:bg-gray-300"
+                      onClick={() => goToPage(meta.currentPage - 1)}
+                      disabled={meta.currentPage <= 1}
+                      className={`px-4 py-2 rounded focus:outline-none transition-colors ${
+                        meta.currentPage <= 1
+                          ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
                       }`}
                     >
-                      {pageNum}
+                      Anterior
                     </button>
-                  ))}
 
-                  <button
-                    onClick={() => goToPage(meta.currentPage + 1)}
-                    disabled={meta.currentPage >= meta.lastPage}
-                    className={`px-4 py-2 rounded focus:outline-none ${
-                      meta.currentPage >= meta.lastPage
-                        ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
-                    }`}
-                  >
-                    Próximo
-                  </button>
+                    {/* Paginação inteligente - mostra no máximo 5 páginas */}
+                    {(() => {
+                      const pages = [];
+                      const maxVisiblePages = 5;
+                      let startPage = Math.max(1, meta.currentPage - Math.floor(maxVisiblePages / 2));
+                      let endPage = Math.min(meta.lastPage, startPage + maxVisiblePages - 1);
+                      
+                      // Ajusta o startPage se necessário
+                      if (endPage - startPage + 1 < maxVisiblePages) {
+                        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                      }
+
+                      for (let i = startPage; i <= endPage; i++) {
+                        pages.push(
+                          <button
+                            key={i}
+                            onClick={() => goToPage(i)}
+                            className={`px-4 py-2 rounded focus:outline-none transition-colors ${
+                              i === meta.currentPage
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                            }`}
+                          >
+                            {i}
+                          </button>
+                        );
+                      }
+                      return pages;
+                    })()}
+
+                    <button
+                      onClick={() => goToPage(meta.currentPage + 1)}
+                      disabled={meta.currentPage >= meta.lastPage}
+                      className={`px-4 py-2 rounded focus:outline-none transition-colors ${
+                        meta.currentPage >= meta.lastPage
+                          ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }`}
+                    >
+                      Próximo
+                    </button>
+                  </div>
+
+                  {/* Informações da paginação - CORRIGIDAS */}
+                  <div className="text-center text-sm text-stone-600">
+                    {(() => {
+                      const { start, end } = calculateItemRange();
+                      const hasSearch = searchQuery.trim() !== "";
+                      
+                      if (meta.total === 0) {
+                        return hasSearch 
+                          ? `Nenhum resultado encontrado para "${searchQuery}"` 
+                          : "Nenhum produto cadastrado";
+                      }
+                      
+                      return (
+                        <>
+                          <div>
+                            Página {meta.currentPage} de {meta.lastPage}
+                          </div>
+                          <div>
+                            Mostrando {start} - {end} de {meta.total} {meta.total === 1 ? 'produto' : 'produtos'}
+                            {hasSearch && ` para "${searchQuery}"`}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+              
+              {/* Caso tenha produtos mas apenas 1 página */}
+              {meta.lastPage === 1 && meta.total > 0 && (
+                <div className="text-center text-sm text-stone-600 mt-4">
+                  {(() => {
+                    const hasSearch = searchQuery.trim() !== "";
+                    return (
+                      <>
+                        <div>
+                          Mostrando {meta.total === 1 ? '1 produto' : `todos os ${meta.total} produtos`}
+                          {hasSearch && ` para "${searchQuery}"`}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>

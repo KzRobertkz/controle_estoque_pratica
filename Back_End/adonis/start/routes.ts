@@ -38,6 +38,7 @@ router.group(() => {
   // Rotas de consultas específicas de produtos
   router.get('/products/recent', '#controllers/products_controller.getRecent')
   router.get('/products/recent/history', '#controllers/products_controller.getHistory')
+  router.get('/products/recent/history/page', '#controllers/products_controller.getPages')
 }).middleware(middleware.auth())
 
 
