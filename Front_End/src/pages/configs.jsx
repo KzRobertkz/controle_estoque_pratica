@@ -1,19 +1,57 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearch } from '../components/Header/searchcontent'
 import Header from "../components/Header/header"
 import { Sidebar } from "../components/Sidebar/sidebar"
 import { FiSettings, FiAlertTriangle } from "react-icons/fi"
+import { PasswordModal, NameModal, EmailModal } from '../components/modal/ConfigModals'
 
 export const Configuracoes = () => {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const { hideSearch, setHideSearch } = useSearch()
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false)
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [newName, setNewName] = useState('')
+  const [newEmail, setNewEmail] = useState('')
+  const [userData, setUserData] = useState(null)
+
+  useEffect(() => {
+    // Simulate fetching user data
+    const fetchUserData = async () => {
+      const data = {
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+      }
+      setUserData(data)
+    }
+    fetchUserData()
+  }, [])
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode)
   }
 
   const toggleSearch = () => {
-    setHideSearch(!hideSearch)
+    const newValue = !hideSearch
+    setHideSearch(newValue)
+    localStorage.setItem('hideSearch', JSON.stringify(newValue))
+  }
+
+  const handlePasswordSubmit = () => {
+    console.log('Password updated:', newPassword)
+    setIsPasswordModalOpen(false)
+  }
+
+  const handleNameSubmit = () => {
+    console.log('Name updated:', newName)
+    setIsNameModalOpen(false)
+  }
+
+  const handleEmailSubmit = () => {
+    console.log('Email updated:', newEmail)
+    setIsEmailModalOpen(false)
   }
 
   return (
@@ -33,7 +71,6 @@ export const Configuracoes = () => {
             </div>
           </div>
 
-        {/* Área de conteúdo com rolagem */}
           <div className='px-4'>
             <div className='grid grid-cols-12 gap-4 w-full'>
               <div className='col-span-12 p-4 border border-stone-400 rounded-md w-full'>
@@ -117,15 +154,30 @@ export const Configuracoes = () => {
                 
                 <div className="space-y-6">
                   <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-100 transition-colors duration-200">
-                    <button className="text-sm p-2 font-medium hover:bg-zinc-700 hover:text-gray-200">Editar senha</button>
+                    <button 
+                      className="text-sm p-2 font-medium focus:outline-none hover:bg-zinc-700 hover:text-gray-200"
+                      onClick={() => setIsPasswordModalOpen(true)}
+                    >
+                      Editar senha
+                    </button>
                     <p className="text-base text-stone-800">Definir uma nova senha</p>
                   </div>
                   <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-100 transition-colors duration-200">
-                    <button className="text-sm p-2 font-medium hover:bg-zinc-700 hover:text-gray-200">Editar Nome Completo</button>
+                    <button 
+                      className="text-sm p-2 font-medium focus:outline-none hover:bg-zinc-700 hover:text-gray-200"
+                      onClick={() => setIsNameModalOpen(true)}
+                    >
+                      Editar Nome Completo
+                    </button>
                     <p className="text-base text-stone-800">Editar o nome completo</p>
                   </div>
                   <div className="bg-white rounded-lg p-6 border border-red-200 w-full hover:bg-red-100 transition-colors duration-200">
-                    <button className="text-sm p-2 font-medium hover:bg-zinc-700 hover:text-gray-200">Editar E-mail</button>
+                    <button 
+                      className="text-sm p-2 font-medium focus:outline-none hover:bg-zinc-700 hover:text-gray-200"
+                      onClick={() => setIsEmailModalOpen(true)}
+                    >
+                      Editar E-mail
+                    </button>
                     <p className="text-base text-stone-800">Editar o endereço de E-mail</p>
                   </div>
                   <div className="bg-white rounded-lg p-6 border border-red-400 w-full hover:bg-red-100 transition-colors duration-200">
@@ -138,6 +190,34 @@ export const Configuracoes = () => {
           </div>
         </div>
       </div>
+
+      <PasswordModal 
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        newPassword={newPassword}
+        setNewPassword={setNewPassword}
+        confirmPassword={confirmPassword}
+        setConfirmPassword={setConfirmPassword}
+        onSubmit={handlePasswordSubmit}
+      />
+
+      <NameModal 
+        isOpen={isNameModalOpen}
+        onClose={() => setIsNameModalOpen(false)}
+        currentName={userData?.name}
+        newName={newName}
+        setNewName={setNewName}
+        onSubmit={handleNameSubmit}
+      />
+
+      <EmailModal 
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        currentEmail={userData?.email}
+        newEmail={newEmail}
+        setNewEmail={setNewEmail}
+        onSubmit={handleEmailSubmit}
+      />
     </div>
   )
 }
