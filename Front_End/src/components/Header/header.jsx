@@ -7,7 +7,7 @@ import { CgProfile } from "react-icons/cg";
 import { useSearch } from "./searchcontent";
 import { CommandMenu } from './commandbar';
 
-function Header() {
+export default function Header() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
@@ -134,7 +134,5 @@ function Header() {
     </>
   );
 }
-
-export default Header;
 
 

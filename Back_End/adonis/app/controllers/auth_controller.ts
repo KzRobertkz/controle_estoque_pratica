@@ -34,5 +34,34 @@ export default class AuthController {
     }
   }
   
+  async index({ auth, response }: HttpContext) {
+    try {
+      // Verifica autenticação
+      await auth.check()
+      
+      // Busca todos os usuários ordenados por ID
+      const users = await User.query()
+        .select('id', 'fullName', 'email', 'createdAt')
+        .orderBy('id', 'asc')
+      
+      return response.json(users)
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error)
+      
+      if (error.name === 'AuthenticationException') {
+        return response.status(401).json({
+          message: 'Não autorizado'
+        })
+      }
+      
+      return response.status(500).json({
+        message: 'Erro ao buscar usuários',
+        error: error.message
+      })
+    }
+  }
   
 }
+
+
+

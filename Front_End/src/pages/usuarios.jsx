@@ -1,8 +1,72 @@
-import Header from "../components/Header/header"
-import { Sidebar } from "../components/Sidebar/sidebar"
-import { FiUsers } from "react-icons/fi"
+import { useState, useEffect } from 'react'
+import axios from 'axios'
+import Header from '../components/Header/header'
+import { Sidebar } from '../components/Sidebar/sidebar'
+import { FiUsers } from 'react-icons/fi'
 
 export const Usuarios = () => {
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        
+        if (!token) {
+          setError('Token não encontrado. Por favor, faça login.')
+          setLoading(false)
+          return
+        }
+
+        const response = await axios.get('http://localhost:3333/users', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+
+        const sortedUsers = response.data.sort((a, b) => a.id - b.id)
+        setUsers(sortedUsers)
+        setLoading(false)
+      } catch (err) {
+        console.error('Erro ao buscar usuários:', err)
+        
+        if (err.response?.status === 401) {
+          setError('Sessão expirada. Por favor, faça login novamente.')
+        } else {
+          setError('Erro ao carregar usuários. Tente novamente mais tarde.')
+        }
+        
+        setLoading(false)
+      }
+    }
+
+    fetchUsers()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-stone-900"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="flex justify-center items-center h-screen">
+          <div className="text-red-600 font-semibold">{error}</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -20,19 +84,40 @@ export const Usuarios = () => {
             </div>
           </div>
 
-          <div className='px-6'> {/* Aumentado o padding horizontal */}
+          <div className='px-6'>
             <div className='grid grid-cols-12 gap-6'>
               <div className='col-span-12 p-6 border border-stone-400 rounded-lg'>
                 <div className='mb-6 flex items-center justify-between'>
-                  <h3 className='text-lg font-semibold flex items-center gap-3 text-stone-700'>
-                    Usuários Cadastrados
+                  <h3 className='text-lg font-bold text-stone-800'>
+                    Usuários Cadastrados ( {users.length} )
                   </h3>
                 </div>
                 
-                <div className="space-y-6">
-                  {[...Array(10)].map((_, i) => (
-                    <div key={i} className="bg-white rounded-lg p-6 border border-stone-200 hover:bg-stone-100 transition-colors duration-200">
-                      <p className="text-base text-stone-600">Usuário {i + 1}</p>
+                <div className="space-y-4">
+                  {users.map((user, index) => (
+                    <div 
+                      key={user.id}
+                      className="bg-white rounded-lg p-4 border border-stone-200 hover:bg-stone-100 transition-colors"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-semibold text-stone-900">
+                            {index === 0 ? 'Gerente' : 'Usuário'} - {user.fullName}
+                          </p>
+                          <p className="text-sm text-stone-700">Email: {user.email}</p>
+                          <p className="text-xs text-stone-600">Customer ID: {user.id}</p>
+                        </div>
+                        {index === 0 && (
+                          <span className="ml-20 px-3 py-2 bg-blue-100 border border-blue-700 text-blue-800 text-sm rounded-full">
+                            Gerente / Chefe
+                          </span>
+                        )}
+                        {index >= 1 && (
+                          <span className="px-3 py-2 bg-blue-100 text-blue-800 text-sm rounded-full">
+                            Funcionário
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
