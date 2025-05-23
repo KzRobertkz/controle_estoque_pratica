@@ -1,0 +1,112 @@
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradientes -->
+    <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f8fafc;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:0.1" />
+    </linearGradient>
+
+    <!-- Sombras -->
+    <filter id="cardShadow">
+      <dropShadow dx="0" dy="8" stdDeviation="15" flood-color="#000000" flood-opacity="0.1"/>
+    </filter>
+    
+    <filter id="glowEffect">
+      <dropShadow dx="0" dy="0" stdDeviation="8" flood-color="#10b981" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background com padrão sutil -->
+  <rect width="800" height="500" fill="#f0fdf4" opacity="0.3"/>
+  
+  <!-- Elementos decorativos de fundo -->
+  <circle cx="150" cy="80" r="60" fill="#10b981" opacity="0.05"/>
+  <circle cx="650" cy="420" r="80" fill="#059669" opacity="0.05"/>
+  <rect x="500" y="50" width="4" height="60" fill="#10b981" opacity="0.1" rx="2"/>
+  <rect x="520" y="30" width="4" height="100" fill="#059669" opacity="0.1" rx="2"/>
+
+  <!-- Dashboard principal -->
+  <rect x="50" y="80" width="500" height="320" rx="16" fill="url(#cardGradient)" filter="url(#cardShadow)"/>
+  
+  <!-- Header do dashboard -->
+  <rect x="70" y="100" width="460" height="60" rx="8" fill="#f8fafc"/>
+  <rect x="90" y="115" width="120" height="12" rx="6" fill="#e5e7eb"/>
+  <rect x="90" y="135" width="80" height="8" rx="4" fill="#d1d5db"/>
+  
+  <!-- Círculos indicadores no header -->
+  <circle cx="450" cy="130" r="12" fill="url(#greenGradient)" filter="url(#glowEffect)"/>
+  <circle cx="480" cy="130" r="12" fill="#10b981" opacity="0.6"/>
+  <circle cx="510" cy="130" r="12" fill="#6ee7b7" opacity="0.4"/>
+
+  <!-- Gráfico de barras -->
+  <rect x="90" y="200" width="25" height="80" rx="4" fill="url(#chartGradient)"/>
+  <rect x="125" y="220" width="25" height="60" rx="4" fill="url(#chartGradient)"/>
+  <rect x="160" y="180" width="25" height="100" rx="4" fill="url(#chartGradient)"/>
+  <rect x="195" y="210" width="25" height="70" rx="4" fill="url(#chartGradient)"/>
+  <rect x="230" y="190" width="25" height="90" rx="4" fill="url(#chartGradient)"/>
+  <rect x="265" y="205" width="25" height="75" rx="4" fill="url(#chartGradient)"/>
+
+  <!-- Linha do gráfico -->
+  <polyline points="320,250 350,230 380,210 410,220 440,190 470,200" 
+            stroke="url(#greenGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Pontos do gráfico -->
+  <circle cx="320" cy="250" r="4" fill="#10b981"/>
+  <circle cx="350" cy="230" r="4" fill="#10b981"/>
+  <circle cx="380" cy="210" r="4" fill="#10b981"/>
+  <circle cx="410" cy="220" r="4" fill="#10b981"/>
+  <circle cx="440" cy="190" r="4" fill="#10b981"/>
+  <circle cx="470" cy="200" r="4" fill="#10b981"/>
+
+  <!-- Cards laterais -->
+  <rect x="580" y="120" width="160" height="100" rx="12" fill="url(#cardGradient)" filter="url(#cardShadow)"/>
+  <rect x="600" y="140" width="60" height="8" rx="4" fill="#e5e7eb"/>
+  <rect x="600" y="155" width="40" height="6" rx="3" fill="#d1d5db"/>
+  <rect x="600" y="180" width="80" height="20" rx="10" fill="url(#greenGradient)"/>
+
+  <rect x="580" y="240" width="160" height="100" rx="12" fill="url(#cardGradient)" filter="url(#cardShadow)"/>
+  <rect x="600" y="260" width="70" height="8" rx="4" fill="#e5e7eb"/>
+  <rect x="600" y="275" width="50" height="6" rx="3" fill="#d1d5db"/>
+  <circle cx="680" cy="300" r="18" fill="#10b981" opacity="0.2"/>
+  <circle cx="680" cy="300" r="12" fill="#10b981" opacity="0.6"/>
+  <circle cx="680" cy="300" r="6" fill="#10b981"/>
+
+  <!-- Elementos flutuantes -->
+  <rect x="120" y="50" width="80" height="40" rx="8" fill="url(#cardGradient)" filter="url(#cardShadow)"/>
+  <rect x="135" y="62" width="30" height="4" rx="2" fill="#10b981"/>
+  <rect x="135" y="70" width="20" height="3" rx="1.5" fill="#6ee7b7"/>
+  <circle cx="180" cy="70" r="8" fill="#10b981" opacity="0.2"/>
+  <circle cx="180" cy="70" r="4" fill="#10b981"/>
+
+  <!-- Ícones decorativos -->
+  <g transform="translate(650, 60)">
+    <rect width="40" height="40" rx="8" fill="url(#cardGradient)" filter="url(#cardShadow)"/>
+    <path d="M12 8v8l4-4 4 4V8" stroke="#10b981" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M12 8h8" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Texto "Analytics" -->
+  <text x="90" y="360" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#374151">Analytics Dashboard</text>
+  <text x="90" y="380" font-family="Inter, sans-serif" font-size="12" fill="#6b7280">Real-time business insights</text>
+
+  <!-- Partículas flutuantes -->
+  <circle cx="200" cy="120" r="2" fill="#10b981" opacity="0.4">
+    <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="450" cy="180" r="1.5" fill="#6ee7b7" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="300" cy="150" r="1" fill="#10b981" opacity="0.5">
+    <animate attributeName="opacity" values="0.5;0.9;0.5" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>
