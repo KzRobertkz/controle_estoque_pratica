@@ -6,6 +6,7 @@ import {
   RouterProvider,
   Navigate,
 } from "react-router-dom"
+import LandingPage from './pages/landingPage.jsx' 
 import Home from './pages/home.jsx'
 import Estoque from './pages/estoque.jsx'
 import { Produtos } from './pages/produtos.jsx'
@@ -19,7 +20,11 @@ import { SearchProvider } from './components/Header/searchcontent.jsx'
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/login" replace />,
+    element: <Navigate to="/landingpage" replace />,
+  },
+  {
+    path: "/landingpage", 
+    element: <LandingPage />,
   },
   {
     path: "/login",

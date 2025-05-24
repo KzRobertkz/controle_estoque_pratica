@@ -5,7 +5,6 @@ import { SearchProvider } from './components/Header/searchcontent'
 function App() {
   return (
     <SearchProvider>
-      {/* ...resto dos seus componentes... */}
       <RouterProvider router={router} />
     </SearchProvider>
   )
