@@ -7,10 +7,10 @@ import {
   Navigate,
 } from "react-router-dom"
 import LandingPage from './pages/landingPage.jsx' 
-import Home from './pages/home.jsx'
-import Estoque from './pages/estoque.jsx'
 import Login from './pages/login.jsx'
 import Signup from './pages/signup.jsx'
+import Home from './pages/home.jsx'
+import Estoque from './pages/estoque.jsx'
 import { LogoutPage } from './pages/logoutPage.jsx'
 import { Produtos } from './pages/produtos.jsx'
 import { Usuarios } from './pages/usuarios.jsx'
