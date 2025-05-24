@@ -90,15 +90,15 @@ export default function LandingPage() {
             
             <nav className="hidden md:flex items-center space-x-6">
               <button onClick={() => scrollToSection("features")} 
-                      className="bg-zinc-900 ring-1 ring-sky-950 text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 px-3 py-1 rounded-lg transition-all duration-200">
+                      className="bg-zinc-900 ring-1 ring-sky-950 text-gray-300 focus:outline-none focus:ring-1 focus:ring-sky-700 hover:text-cyan-300 hover:bg-cyan-500/10 px-3 py-1 rounded-lg transition-all duration-200">
                 Recursos
               </button>
               <button onClick={() => scrollToSection("sobre")} 
-                      className="bg-zinc-900 ring-1 ring-sky-950 text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 px-3 py-1 rounded-lg transition-all duration-200">
+                      className="bg-zinc-900 ring-1 ring-sky-950 text-gray-300 focus:outline-none focus:ring-1 focus:ring-sky-700 hover:text-cyan-300 hover:bg-cyan-500/10 px-3 py-1 rounded-lg transition-all duration-200">
                 Sobre
               </button>
               <button onClick={() => scrollToSection("contato")} 
-                      className="bg-zinc-900 ring-1 ring-sky-950 text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 px-3 py-1    rounded-lg transition-all duration-200">
+                      className="bg-zinc-900 ring-1 ring-sky-950 text-gray-300 focus:outline-none focus:ring-1 focus:ring-sky-700 hover:text-cyan-300 hover:bg-cyan-500/10 px-3 py-1    rounded-lg transition-all duration-200">
                 Contato
               </button>
             </nav>
