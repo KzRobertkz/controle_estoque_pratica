@@ -164,11 +164,11 @@ node ace generate:key
 node ace migration:run
 ```
 
-#### Opcional
-```bash
-# Popular o banco com dados de exemplo
-node ace db:seed
-```
+> #### Opcional:
+> ```bash
+> # Popular o banco com dados de exemplo
+> node ace db:seed
+> ```
 
 #### Inicie o servidor backend:
 
