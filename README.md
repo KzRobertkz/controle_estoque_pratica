@@ -1,3 +1,4 @@
+
 # 📦 Sistema de Controle de Estoque
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/KzRobertkz/controle_estoque_pratica)
@@ -8,7 +9,7 @@ Sistema Fullstack com **AdonisJS v6** no backend e **React + Tailwind + Vite** n
 
 ---
 
-## 🚀 Clone este repositório 👉([Passo a passo](#%EF%B8%8F-instalação-e-configuração))
+## 🚀 Clone este repositório ([Passo a passo](#%EF%B8%8F-instalação-e-configuração))
 
 [![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&duration=6000&pause=1000&color=6EB6F7&width=840&height=60&lines=%24+git+clone+https%3A%2F%2Fgithub.com%2FKzRobertkz%2Fcontrole_estoque_pratica.git)](https://kzrobertkz.github.io/Dev_links/)
 
@@ -37,12 +38,13 @@ git clone https://github.com/KzRobertkz/controle_estoque_pratica.git
 ## 🛠️ Tecnologias Utilizadas
 
 | Tecnologia     | Descrição                    |
-| -------------- | ---------------------------- |
-| `AdonisJS`     | Backend principal            |
-| `PostgreSQL`   | Banco de dados relacional    |
-| `React`+`Vite` | Estrutura e visual           |
-| `JavaScript`   | Funcionalidades no frontend  |
-| `TailwindCSS`  | Estilização e responsividade |
+| -------------- | ---------------------------- | 
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/adonisjs/adonisjs-original.svg" width="25" height="25" style="vertical-align: middle" /> &nbsp;`AdonisJS`          | Backend principal            |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg" width="25" height="25" style="vertical-align: middle"/> &nbsp;`PostgreSQL`     | Banco de dados relacional    |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" width="25" height="25" style="vertical-align: middle"/> &nbsp;`React`                    | Estrutura e visual           |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vitejs/vitejs-original.svg" width="25" height="25" style="vertical-align: middle"/> &nbsp;`Vite`                   | Build tool e bundler         |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" width="25" height="25" style="vertical-align: middle"/> &nbsp;`JavaScript`     | Funcionalidades no frontend  |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" width="25" height="25" style="vertical-align: middle"/> &nbsp;`TailwindCSS`  | Estilização e responsividade |
 
 ---
 
@@ -64,41 +66,72 @@ git clone https://github.com/KzRobertkz/controle_estoque_pratica.git
 cd controle_estoque_pratica
 ```
 
-### 🗄️ 2. Configuração do Banco de Dados PostgreSQL
+### 🗄️ 2. Configuração do Banco de Dados PostgreSQL (Se você não tem um banco configurado)
+
+> **📝 Nota**: Se você já possui um banco PostgreSQL configurado e funcionando, pule para o **[Passo 3](#-3-configura%C3%A7%C3%A3o-do-backend-adonisjs-v6)**. Apenas certifique-se de ter as credenciais de acesso (usuário, senha, nome do banco).
+
+#### Onde executar os comandos PostgreSQL:
+
+Os comandos SQL abaixo devem ser executados no **terminal/prompt de comando** do seu PostgreSQL:
+
+**🐧 Linux/Mac:**
+```bash
+# Abra o terminal e execute:
+sudo -u postgres psql
+```
+
+**<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows11/windows11-original.svg" width="13" height="13" /> &nbsp;Windows:**
+- Abra o **SQL Shell (psql)** que foi instalado junto com o PostgreSQL
+- Ou use o **pgAdmin** (interface gráfica)
+- Ou abra o **Command Prompt** e digite: `psql -U postgres`
 
 #### Criando o banco de dados:
 
 ```sql
--- Conecte-se ao PostgreSQL como superusuário
-psql -U postgres
+-- 1. Conecte-se ao PostgreSQL (você já estará conectado se seguiu os passos acima)
 
--- Crie o banco de dados
+-- 2. Crie o banco de dados
 CREATE DATABASE controle_estoque;
 
--- Crie um usuário específico (opcional)
-CREATE USER estoque_user WITH ENCRYPTED PASSWORD 'sua_senha_aqui';
+-- 3. Crie um usuário específico (RECOMENDADO para segurança)
+CREATE USER estoque_user WITH ENCRYPTED PASSWORD 'sua_senha_forte_aqui';
 
--- Conceda privilégios
+-- 4. Conceda privilégios ao usuário
 GRANT ALL PRIVILEGES ON DATABASE controle_estoque TO estoque_user;
 
--- Saia do PostgreSQL
+-- 5. Conecte ao banco criado para dar permissões adicionais
+\c controle_estoque;
+
+-- 6. Conceda permissões no schema public
+GRANT ALL ON SCHEMA public TO estoque_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO estoque_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO estoque_user;
+
+-- 7. Saia do PostgreSQL
 \q
 ```
+
+**⚠️ Importante**: Anote as credenciais que você criou:
+
+Exemplo:
+- **Banco**: `controle_estoque`
+- **Usuário**: `estoque_user` 
+- **Senha**: `sua_senha_forte_aqui`
 
 ### 🔧 3. Configuração do Backend (AdonisJS v6)
 
 ```bash
 # Navegue para o diretório do backend
-cd Back_End/adonis
+cd backend
 
 # Instale as dependências
 npm install
 ```
 
-#### Configure o arquivo de environment (`.env`):
+#### Configure o arquivo de environment:
 
 ```bash
-# Copie o arquivo de exemplo e cole no seu .env, se não tiver, pode simplesmente renomear o ".env.example" para ".env"
+# Copie o arquivo de exemplo
 cp .env.example .env
 ```
 
@@ -106,20 +139,22 @@ Edite o arquivo `.env` com suas configurações:
 
 ```env
 # Configurações do Servidor
-TZ=UTC
 PORT=3333
 HOST=localhost
-LOG_LEVEL=info
-APP_KEY="cole sua chave aqui (O proximo passo mostrará como gerá-la)"
+NODE_ENV=development
+APP_KEY=your-secure-app-key-here
 
 # Configurações do Banco PostgreSQL
-NODE_ENV=development
-DB_HOST=127.0.0.1 // Ou Localhost
-DB_PORT=5432
-DB_USER=Nome de Usuário do seu banco de Dados
-DB_PASSWORD=Senha do Banco de Dados
-DB_DATABASE=Nome Do seu Banco de Dados
+DB_CONNECTION=pg
+PG_HOST=localhost
+PG_PORT=5432
+PG_USER=estoque_user
+PG_PASSWORD=sua_senha_aqui
+PG_DB_NAME=controle_estoque
 
+# CORS (para comunicação com o frontend)
+CORS_ENABLED=true
+CORS_ORIGIN=http://localhost:5173
 ```
 
 #### Execute as migrations para criar as tabelas:
@@ -130,30 +165,15 @@ node ace generate:key
 
 # Executar as migrations
 node ace migration:run
-```
-#### **Opcional:**
-
-```bash
 
 # (Opcional) Popular o banco com dados de exemplo
 node ace db:seed
 ```
 
-#### Caso a migration não rode corretamente:
-
-```bash
-# Gerar uma chave de aplicação
-node ace migration:refresh
-
-# Executar as migrations
-node ace migration:run
-```
-
-
 #### Inicie o servidor backend:
 
 ```bash
-# Modo desenvolvimento
+# Modo desenvolvimento (com auto-reload)
 node ace serve --watch
 
 # Ou simplesmente
@@ -168,10 +188,27 @@ Abra um novo terminal e navegue para o diretório do frontend:
 
 ```bash
 # Navegue para o diretório do frontend
-cd Front_End
+cd frontend
 
 # Instale as dependências
 npm install
+```
+
+#### Configure o arquivo de environment do frontend:
+
+```bash
+# Crie o arquivo .env na raiz do diretório frontend
+touch .env
+```
+
+Adicione as configurações no arquivo `.env`:
+
+```env
+# URL da API backend
+VITE_API_URL=http://localhost:3333
+
+# Outras configurações (opcional)
+VITE_APP_NAME="Sistema de Controle de Estoque"
 ```
 
 #### Inicie o servidor frontend:
@@ -196,11 +233,32 @@ O frontend estará rodando em: `http://localhost:5173`
 # Ver rotas disponíveis
 node ace list:routes
 
+# Executar migrations
+node ace migration:run
+
 # Reverter última migration
 node ace migration:rollback
 
 # Criar nova migration
 node ace make:migration nome_da_migration
+
+# Popular banco com dados de exemplo
+node ace db:seed
+```
+
+#### Frontend (React + Vite):
+```bash
+# Executar em modo desenvolvimento
+npm run dev
+
+# Build para produção
+npm run build
+
+# Preview do build de produção
+npm run preview
+
+# Executar linter
+npm run lint
 ```
 
 ### 🐛 Solução de Problemas Comuns
@@ -230,6 +288,13 @@ sudo lsof -ti:5173 | xargs kill -9
 - [Documentação AdonisJS](https://docs.adonisjs.com/)
 - [Documentação Vite](https://vitejs.dev/)
 - [TailwindCSS](https://tailwindcss.com/)
+- [Página de links úteis do projeto](https://kzrobertkz.github.io/Dev_links/)
+
+---
+
+## 🧪 Demonstração
+
+🔗 [Página com links úteis](https://kzrobertkz.github.io/Dev_links/)
 
 ---
 
