@@ -131,7 +131,7 @@ npm install
 #### Configure o arquivo de environment:
 
 ```bash
-# Copie o arquivo de exemplo. Caso não tenha um ".env", basta renomear o ".env.example" para ".env"
+# Copie o arquivo de exemplo para o ".env". Caso não tenha um ".env", basta renomear o ".env.example" para ".env"
 cp .env.example .env
 ```
 
@@ -143,7 +143,7 @@ TZ=UTC
 PORT=3333
 HOST=localhost
 LOG_LEVEL=info
-APP_KEY=Cole sua chave aqui ([Passo a passo](#%EF%B8%8F-instalação-e-configuração))
+APP_KEY=Cole sua chave aqui (Passo a passo na seção seguinte)
 
 # Configurações do Banco PostgreSQL
 NODE_ENV=development
@@ -164,7 +164,7 @@ node ace generate:key
 node ace migration:run
 ```
 
-#### **Opcional**
+#### Opcional
 ```bash
 # Popular o banco com dados de exemplo
 node ace db:seed
@@ -277,5 +277,5 @@ Distribuído sob a licença **MIT**. Veja o arquivo [`LICENSE`](https://github.c
 
 ## 👨‍💻 Desenvolvedor
 
-Feito com ❤️ por [@KzRobertkz](https://github.com/KzRobertkz)
+Feito com ❤️ By Eu [@KzRobertkz](https://github.com/KzRobertkz)
 
