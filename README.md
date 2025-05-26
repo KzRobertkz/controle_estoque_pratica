@@ -131,7 +131,7 @@ npm install
 #### Configure o arquivo de environment:
 
 ```bash
-# Copie o arquivo de exemplo para o ".env". Caso não tenha um ".env", basta renomear o ".env.example" para ".env"
+# Copie o arquivo para o ".env". Caso não tenha um ".env", basta renomear o ".env.example" para ".env"
 cp .env.example .env
 ```
 
