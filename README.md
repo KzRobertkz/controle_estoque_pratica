@@ -271,7 +271,7 @@ sudo lsof -ti:5173 | xargs kill -9
 
 ## 📝 Licença
 
-Distribuído sob a licença **MIT**. Veja o arquivo [`LICENSE`](https://github.com/KzRobertkz/controle_estoque_pratica/blob/main/LICENSE) para mais informações.
+Distribuído sob a licença **MIT**. Veja o arquivo [`LICENSE`](https://opensource.org/licenses/MIT) para mais informações.
 
 ---
 
