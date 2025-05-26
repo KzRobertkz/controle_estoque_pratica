@@ -122,7 +122,7 @@ Exemplo:
 
 ```bash
 # Navegue para o diretório do backend
-cd backend
+cd Back_End/adonis
 
 # Instale as dependências
 npm install
@@ -131,7 +131,7 @@ npm install
 #### Configure o arquivo de environment:
 
 ```bash
-# Copie o arquivo de exemplo
+# Copie o arquivo de exemplo. Caso não tenha um ".env", basta renomear o ".env.example" para ".env"
 cp .env.example .env
 ```
 
@@ -139,41 +139,41 @@ Edite o arquivo `.env` com suas configurações:
 
 ```env
 # Configurações do Servidor
+TZ=UTC
 PORT=3333
 HOST=localhost
-NODE_ENV=development
-APP_KEY=your-secure-app-key-here
+LOG_LEVEL=info
+APP_KEY=Cole sua chave aqui ([Passo a passo](#%EF%B8%8F-instalação-e-configuração))
 
 # Configurações do Banco PostgreSQL
-DB_CONNECTION=pg
-PG_HOST=localhost
-PG_PORT=5432
-PG_USER=estoque_user
-PG_PASSWORD=sua_senha_aqui
-PG_DB_NAME=controle_estoque
-
-# CORS (para comunicação com o frontend)
-CORS_ENABLED=true
-CORS_ORIGIN=http://localhost:5173
+NODE_ENV=development
+DB_HOST=127.0.0.1 // Ou localhost
+DB_PORT=5432
+DB_USER=Nome de Usuário do seu Banco de Dados
+DB_PASSWORD=Senha do seu Banco de Dados
+DB_DATABASE=Nome do seu Banco de Dados
 ```
 
 #### Execute as migrations para criar as tabelas:
 
 ```bash
-# Gerar uma chave de aplicação
+# Gere uma chave de aplicação e cole em APP_KEY do seu ".env"
 node ace generate:key
 
 # Executar as migrations
 node ace migration:run
+```
 
-# (Opcional) Popular o banco com dados de exemplo
+#### **Opcional**
+```bash
+# Popular o banco com dados de exemplo
 node ace db:seed
 ```
 
 #### Inicie o servidor backend:
 
 ```bash
-# Modo desenvolvimento (com auto-reload)
+# Modo desenvolvimento
 node ace serve --watch
 
 # Ou simplesmente
@@ -188,27 +188,10 @@ Abra um novo terminal e navegue para o diretório do frontend:
 
 ```bash
 # Navegue para o diretório do frontend
-cd frontend
+cd Front_End
 
 # Instale as dependências
 npm install
-```
-
-#### Configure o arquivo de environment do frontend:
-
-```bash
-# Crie o arquivo .env na raiz do diretório frontend
-touch .env
-```
-
-Adicione as configurações no arquivo `.env`:
-
-```env
-# URL da API backend
-VITE_API_URL=http://localhost:3333
-
-# Outras configurações (opcional)
-VITE_APP_NAME="Sistema de Controle de Estoque"
 ```
 
 #### Inicie o servidor frontend:
@@ -236,26 +219,20 @@ node ace list:routes
 # Executar migrations
 node ace migration:run
 
+# Rode caso a migration não gerou corretamente  
+node ace migrations:refresh
+
 # Reverter última migration
 node ace migration:rollback
 
 # Criar nova migration
 node ace make:migration nome_da_migration
-
-# Popular banco com dados de exemplo
-node ace db:seed
 ```
 
 #### Frontend (React + Vite):
 ```bash
 # Executar em modo desenvolvimento
 npm run dev
-
-# Build para produção
-npm run build
-
-# Preview do build de produção
-npm run preview
 
 # Executar linter
 npm run lint
@@ -288,7 +265,6 @@ sudo lsof -ti:5173 | xargs kill -9
 - [Documentação AdonisJS](https://docs.adonisjs.com/)
 - [Documentação Vite](https://vitejs.dev/)
 - [TailwindCSS](https://tailwindcss.com/)
-- [Página de links úteis do projeto](https://kzrobertkz.github.io/Dev_links/)
 
 ---
 
