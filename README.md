@@ -292,11 +292,6 @@ sudo lsof -ti:5173 | xargs kill -9
 
 ---
 
-## 🧪 Demonstração
-
-🔗 [Página com links úteis](https://kzrobertkz.github.io/Dev_links/)
-
----
 
 ## 📝 Licença
 
