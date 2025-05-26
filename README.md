@@ -11,9 +11,7 @@ Sistema Fullstack com **AdonisJS v6** no backend e **React + Tailwind + Vite** n
 
 ## 🚀 Clone este repositório ([Passo a passo](#%EF%B8%8F-instalação-e-configuração))
 
-<a href="https://kzrobertkz.github.io/Dev_links/" target="_blank">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&duration=6000&pause=1000&color=6EB6F7&width=840&height=60&lines=%24+git+clone+https%3A%2F%2Fgithub.com%2FKzRobertkz%2Fcontrole_estoque_pratica.git" alt="Typing SVG">
-</a>
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&duration=6000&pause=1000&color=6EB6F7&width=840&height=60&lines=%24+git+clone+https%3A%2F%2Fgithub.com%2FKzRobertkz%2Fcontrole_estoque_pratica.git)](https://kzrobertkz.github.io/Dev_links/)
 
 ```bash
 git clone https://github.com/KzRobertkz/controle_estoque_pratica.git
