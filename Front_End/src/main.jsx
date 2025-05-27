@@ -7,6 +7,7 @@ import {
   Navigate,
 } from "react-router-dom"
 import LandingPage from './pages/landingPage.jsx' 
+import EmailSent from './pages/sucessEmail.jsx'
 import Login from './pages/login.jsx'
 import Signup from './pages/signup.jsx'
 import Home from './pages/home.jsx'
@@ -23,6 +24,10 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <Navigate to="/landingpage" replace />,
+  },
+  {
+    path: "/sucess-email-sent",
+    element: <EmailSent />,
   },
   {
     path: "/logout-required",

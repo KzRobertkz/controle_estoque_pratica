@@ -15,6 +15,7 @@ import {
   Play,
   Sparkles,
 } from "lucide-react";
+import { useState } from "react";
 
 export default function LandingPage() {
 
@@ -63,6 +64,12 @@ export default function LandingPage() {
     const section = document.getElementById(id);
     if (section) section.scrollIntoView({ behavior: "smooth" });
   };
+
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSubmit = () => {
+    setIsLoading(true)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white overflow-x-hidden">
@@ -417,7 +424,7 @@ export default function LandingPage() {
                     </div>
                     
                     {/* Form email */}
-                    <form className="space-y-6" action="https://formsubmit.co/COLE-SEU-EMAIL-AQUI" method="POST">  {/*preencher com email de suporte*/}
+                    <form className="space-y-6" onSubmit={handleSubmit} action="https://formsubmit.co/COLE-SEU-EMAIL-AQUI" method="POST">  {/* ex: preencher "COLE-SEU-EMAIL-AQUI" com email de suporte*/}
                         <div>
                             <input 
                                 type="text" 
@@ -448,11 +455,31 @@ export default function LandingPage() {
 
                         {/* Anti-spam hidden input */}
                         <input type="hidden" name="_captcha" value="false" />
-                        <input type="hidden" name="_next" value="http://127.0.0.1:5173/landingpage#contato" /> {/* Mude para o nome do seu site no http */}
-                        <button 
-                            type="submit"
-                            className="focus:outline-none  w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-cyan-500/25"
-                        >Enviar Mensagem
+                        <input type="hidden" name="_next" value="http://127.0.0.1:5173/sucess-email-sent" /> {/* Mude para o nome do seu site no http */}
+                        <input type="hidden" name="_autoresponse" value="Recebemos sua mensagem! agradecemos pelo contato e logo responderemos"></input>
+                        <button className="focus:outline-none  w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-cyan-500/25"> 
+                            {isLoading ? (
+                                <div className="flex text-2xl" >
+                                    <svg className="animate-spin h-10 w-10 mr-3 text-white" viewBox="0 0 24 24">
+                                    <circle
+                                        className="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                    ></circle>
+                                    <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8v8z"
+                                    ></path>
+                                    </svg>
+                                    Enviando...
+                                </div>
+                                ) : (
+                                'Enviar Mensagem'
+                                )}
                         </button>
                     </form>
                 </div>
