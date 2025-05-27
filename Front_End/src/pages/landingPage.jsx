@@ -378,80 +378,91 @@ export default function LandingPage() {
         >
         <footer id="contato" className="py-20 bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-                <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                Vamos conversar?
-                </h2>
-                <p className="text-xl text-gray-300">
-                Nossa equipe está pronta para ajudar você a revolucionar sua gestão de estoque
-                </p>
-            </div>
+                <div className="text-center mb-16">
+                    <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                    Vamos conversar?
+                    </h2>
+                    <p className="text-xl text-gray-300">
+                    Nossa equipe está pronta para ajudar você a revolucionar sua gestão de estoque
+                    </p>
+                </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                <div>
-                <div className="space-y-6">
-                    <div className="flex items-center p-4 bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl border border-white/10">
-                    <Mail className="w-6 h-6 text-cyan-400 mr-4" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
                     <div>
-                        <div className="font-semibold text-white">Email</div>
-                        <div className="text-gray-300">suporte@stockmaster.com</div>
-                    </div>
+                        <div className="space-y-6">
+                            <div className="flex items-center p-4 bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl border border-white/10">
+                                <Mail className="w-6 h-6 text-cyan-400 mr-4" />
+                                <div>
+                                    <div className="font-semibold text-white">Email</div>
+                                    <div className="text-gray-300">suporte@stockmaster.com</div>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center p-4 bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl border border-white/10">
+                                <Phone className="w-6 h-6 text-cyan-400 mr-4" />
+                                <div>
+                                    <div className="font-semibold text-white">Telefone</div>
+                                    <div className="text-gray-300">(31) 99999-9999</div>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center p-4 bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl border border-white/10">
+                                <MapPin className="w-6 h-6 text-cyan-400 mr-4" />
+                                <div>
+                                    <div className="font-semibold text-white">Localização</div>
+                                    <div className="text-gray-300">Belo Horizonte, MG</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div className="flex items-center p-4 bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl border border-white/10">
-                    <Phone className="w-6 h-6 text-cyan-400 mr-4" />
-                    <div>
-                        <div className="font-semibold text-white">Telefone</div>
-                        <div className="text-gray-300">(31) 99999-9999</div>
-                    </div>
-                    </div>
-                    
-                    <div className="flex items-center p-4 bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl border border-white/10">
-                    <MapPin className="w-6 h-6 text-cyan-400 mr-4" />
-                    <div>
-                        <div className="font-semibold text-white">Localização</div>
-                        <div className="text-gray-300">Belo Horizonte, MG</div>
-                    </div>
-                    </div>
-                </div>
+                    {/* Form email */}
+                    <form className="space-y-6" action="https://formsubmit.co/COLE-SEU-EMAIL-AQUI" method="POST">  {/*preencher com email de suporte*/}
+                        <div>
+                            <input 
+                                type="text" 
+                                name="nome"
+                                placeholder="Seu nome" 
+                                required
+                                className="w-full px-6 py-4 bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none transition-colors duration-200"
+                            />
+                        </div>
+                        <div>
+                            <input 
+                                type="email" 
+                                name="email"
+                                placeholder="Seu email" 
+                                required
+                                className="w-full px-6 py-4 bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none transition-colors duration-200"
+                            />
+                        </div>
+                        <div>
+                            <textarea 
+                                name="mensagem-de-Vamos-conversar?"
+                                placeholder="Sua mensagem" 
+                                rows={4}
+                                required
+                                className="w-full px-6 py-4 bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none transition-colors duration-200 resize-none"
+                            />
+                        </div>
+
+                        {/* Anti-spam hidden input */}
+                        <input type="hidden" name="_captcha" value="false" />
+                        <input type="hidden" name="_next" value="http://127.0.0.1:5173/landingpage#contato" /> {/* Mude para o nome do seu site no http */}
+                        <button 
+                            type="submit"
+                            className="focus:outline-none  w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-cyan-500/25"
+                        >Enviar Mensagem
+                        </button>
+                    </form>
                 </div>
 
-                <div className="space-y-6">
-                <div>
-                    <input 
-                    type="text" 
-                    placeholder="Seu nome" 
-                    className="w-full px-6 py-4 bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none transition-colors duration-200"
-                    />
+                <div className="mt-16 pt-8 border-t border-white/10 text-center">
+                    <p className="text-gray-400">
+                    © 2025 StockMaster. Todos os direitos reservados. 
+                    <span className="text-cyan-400 ml-2">Feito com ❤️ By Eu, Robert Christian em Belo Horizonte</span>
+                    </p>
                 </div>
-                <div>
-                    <input 
-                    type="email" 
-                    placeholder="Seu email" 
-                    className="w-full px-6 py-4 bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none transition-colors duration-200"
-                    />
-                </div>
-                <div>
-                    <textarea 
-                    placeholder="Sua mensagem" 
-                    rows={4}
-                    className="w-full px-6 py-4 bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none transition-colors duration-200 resize-none"
-                    />
-                </div>
-                <button 
-                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-cyan-500/25"
-                >
-                    Enviar Mensagem
-                </button>
-                </div>
-            </div>
-
-            <div className="mt-16 pt-8 border-t border-white/10 text-center">
-                <p className="text-gray-400">
-                © 2025 StockMaster. Todos os direitos reservados. 
-                <span className="text-cyan-400 ml-2">Feito com ❤️ By Eu, Robert Christian em Belo Horizonte</span>
-                </p>
-            </div>
             </div>
         </footer>
         </motion.footer>
