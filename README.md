@@ -203,6 +203,54 @@ npm run dev
 
 O frontend estará rodando em: `http://localhost:5173`
 
+### ✉️ 4.1. Configurar formulário de e-mail na landing page
+
+Caso queira usar o formulário de e-mail na landing page, siga os passos abaixo:
+
+1. Acesse o arquivo da landing page no frontend:  
+```
+
+/Front_End/src/pages/landingPage.jsx
+
+````
+
+2. Pressione `Ctrl + F` no seu editor de código e procure pelo seguinte comentário:
+     
+```jsx
+{/* Form email */}
+````
+
+3. Logo abaixo desse comentário, localize a linha onde está o e-mail configurado:
+
+```js
+"COLE-SEU-EMAIL-AQUI";
+```
+
+4. Substitua `"COLE-SEU-EMAIL-AQUI"` pelo e-mail que deseja receber as mensagens.
+
+5. Salve o arquivo.
+
+6. Se o servidor frontend ainda não estiver rodando, inicie-o com:
+
+```bash
+npm run dev
+```
+
+7. Acesse a landing page no navegador:
+
+```
+http://localhost:5173
+```
+   ou
+   
+```
+http://localhost:5174
+```
+   
+9. Preencha o formulário e envie uma mensagem de teste.
+
+10. Abra a caixa de entrada do e-mail configurado e confirme a ativação do Email.
+
 ### 🚀 5. Verificação da Instalação
 
 1. **Backend**: Acesse `http://localhost:3333/health` - deve retornar um JSON com status "ok"
