@@ -27,16 +27,16 @@ export const loginValidator = vine.compile(
   })
 )
 
-export const updateNameValidator = vine.compile(
-  vine.object({
-    name: vine.string().minLength(3).maxLength(30),
-  })
-)
-
 export const updatePasswordValidator = vine.compile(
   vine.object({
     currentPassword: vine.string(),
     newPassword: password,
+  })
+)
+
+export const updateNameValidator = vine.compile(
+  vine.object({
+    name: vine.string().minLength(3).maxLength(30),
   })
 )
 

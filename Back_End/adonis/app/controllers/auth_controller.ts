@@ -1,4 +1,4 @@
-import { loginValidator, registerValidator, deleteUserValidator, updateEmailValidator } from '#validators/auth'
+import { loginValidator, registerValidator, deleteUserValidator, updateEmailValidator, updateNameValidator, updatePasswordValidator } from '#validators/auth'
 import type { HttpContext } from '@adonisjs/core/http'
 import hash from '@adonisjs/core/services/hash'
 import User from '#models/user'
@@ -59,6 +59,106 @@ export default class AuthController {
         message: 'Erro ao buscar usuários',
         error: error.message
       })
+    }
+  }
+
+  async updatePassword({ auth, request, response }: HttpContext) {
+    try {
+      // Verifica se o usuário está autenticado
+      await auth.check()
+      const user = auth.user!
+
+      // Valida os dados da requisição
+      const { currentPassword, newPassword } = await request.validateUsing(updatePasswordValidator)
+
+      // Verifica se a senha atual está correta
+      const isCurrentPasswordValid = await hash.verify(user.password, currentPassword)
+      
+      if (!isCurrentPasswordValid) {
+        return response.status(400).json({
+          message: 'Senha atual incorreta',
+          errors: {
+            currentPassword: ['A senha atual está incorreta']
+          }
+        })
+      }
+
+      // Criptografa a nova senha e atualiza
+      user.password = await hash.make(newPassword)
+      await user.save()
+
+      return response.json({
+        message: 'Senha atualizada com sucesso',
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+        }
+      })
+
+    } catch (error) {
+      console.error('Erro ao atualizar senha:', error)
+
+      if (error.name === 'AuthenticationException') {
+        return response.status(401).json({
+          message: 'Não autorizado',
+        })
+      }
+
+      if (error.name === 'ValidationException') {
+        return response.status(400).json({
+          message: 'Dados inválidos',
+          errors: error.messages,
+        })
+      }
+
+      return response.status(500).json({
+        message: 'Erro interno do servidor',
+        error: error.message,
+      })
+    }
+  }
+
+
+  async updateName({auth, request, response }: HttpContext) {
+    try {
+      await auth.check()
+      const user = auth.user!
+
+      const { name } = await request.validateUsing(updateNameValidator)
+
+      user.fullName = name
+      await user.save()
+
+      return response.json({
+        message: 'Nome atualizado com sucesso',
+        user: {
+          id: user.id,
+          name: user.fullName,
+        }
+      })
+
+    } catch (error) {
+      console.error('Erro ao atualizar nome:', error)
+
+      if (error.name === 'AuthenticationException') {
+        return response.status(401).json({
+          message: 'Não autorizado',
+        })
+      }
+
+      if (error.name === 'ValidationException') {
+        return response.status(400).json({
+          message: 'Dados inválidos',
+          errors: error.messages,
+        })
+      }
+
+      return response.status(500).json({
+        message: 'Erro interno do servidor',
+        error: error.message,
+      })
+
     }
   }
 

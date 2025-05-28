@@ -13,16 +13,21 @@ import {
 export const Configuracoes = () => {
   // Estados principais
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   
   // Estados dos modais
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Estados de loading/submitting
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitName, setIsSubmitName] = useState(false);
+  const [isSubmitPassword, setIsSubmitPassword] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Estados dos formulários
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newName, setNewName] = useState('');
@@ -43,14 +48,99 @@ export const Configuracoes = () => {
   };
 
   // Handlers dos modais
-  const handlePasswordSubmit = async () => {
-    console.log('Password updated:', newPassword);
-    setIsPasswordModalOpen(false);
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validação no frontend
+    if (newPassword !== confirmPassword) {
+      alert('As senhas não coincidem');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      alert('A nova senha deve ter pelo menos 8 caracteres');
+      return;
+    }
+
+    setIsSubmitPassword(true);
+
+    try {
+      const response = await fetch('http://localhost:3333/auth/update-password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ 
+          currentPassword, 
+          newPassword 
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (response.status === 400 && data.errors) {
+          const errorMessage = data.errors.currentPassword?.[0] || 
+                            data.errors.newPassword?.[0] || 
+                            data.message || 'Dados inválidos';
+          throw new Error(errorMessage);
+        } else {
+          throw new Error(data?.message || 'Erro ao alterar senha');
+        }
+      }
+
+      // Limpa campos e fecha o modal
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setIsPasswordModalOpen(false);
+
+      alert('Senha alterada com sucesso!');
+      
+    } catch (error) {
+      console.error('Erro ao alterar senha:', error.message);
+      alert(`Erro: ${error.message}`);
+    } finally {
+      setIsSubmitPassword(false);
+    }
   };
 
-  const handleNameSubmit = async () => {
-    console.log('Name updated:', newName);
-    setIsNameModalOpen(false);
+  const handleNameSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitName(true);
+    try {
+      const response = await fetch('http://localhost:3333/auth/update-name', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ name: newName }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 400 && data.errors) {
+          throw new Error(data.errors.name?.[0] || data.message || 'Nome inválido');
+        } else {
+          throw new Error(data?.message || 'Erro ao alterar nomr');
+        }
+      }
+
+      // Limpa campo e fecha o modal
+      setNewName('');
+      setIsNameModalOpen(false);
+
+      alert('Nome alterado com sucesso!');
+      } catch (error) {
+      console.error('Erro ao alterar nome:', error.message);
+      alert(`Erro: ${error.message}`);
+      } finally {
+      setIsSubmitName(false);
+    }
+    
   };
 
   const handleEmailSubmit = async (e) => {
@@ -309,11 +399,14 @@ export const Configuracoes = () => {
       <PasswordModal 
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
+        currentPassword={currentPassword}
+        setCurrentPassword={setCurrentPassword}
         newPassword={newPassword}
         setNewPassword={setNewPassword}
         confirmPassword={confirmPassword}
         setConfirmPassword={setConfirmPassword}
         onSubmit={handlePasswordSubmit}
+        isSubmitPassword={isSubmitPassword}
       />
 
       <NameModal 

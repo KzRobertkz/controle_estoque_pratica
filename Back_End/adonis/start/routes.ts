@@ -30,8 +30,10 @@ router.group(() => {
   router.get('/users', [AuthController, 'index']).as('users.index')
 
   // Rotas do usuário
-  router.delete('/auth/delete-user', [AuthController, 'deleteUser'])
   router.put('/auth/update-email', [AuthController, 'updateEmail'])
+  router.put('/auth/update-name', [AuthController, 'updateName'])
+  router.put('/auth/update-password', [AuthController, 'updatePassword'])
+  router.delete('/auth/delete-user', [AuthController, 'deleteUser'])
 
   // Rotas de produtos
   router.get('/products', '#controllers/products_controller.index')
