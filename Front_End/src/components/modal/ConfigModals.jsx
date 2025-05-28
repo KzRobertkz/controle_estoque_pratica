@@ -1,16 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiTrash2 } from 'react-icons/fi';
+import { FaEye , FaEyeSlash } from "react-icons/fa6";
 
 // Modal para mudar a senha do usuário
 export const PasswordModal = ({ 
   isOpen, 
   onClose, 
   newPassword, 
+  currentPassword,
   setNewPassword, 
   confirmPassword, 
   setConfirmPassword, 
   onSubmit 
 }) => {
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   if (!isOpen) return null;
 
   return (
@@ -22,30 +28,81 @@ export const PasswordModal = ({
         
         <form onSubmit={onSubmit}>
           <div className="space-y-4">
+            {/* Senha atual */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Senha atual
+              </label>
+              <div className="relative">
+                <input
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={currentPassword || ''}
+                  className="mt-1 block w-full rounded-md border text-black border-gray-500 p-2 bg-gray-200"
+                  disabled
+                />
+                <span
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute inset-y-0 right-4 flex items-center cursor-pointer"
+                >
+                  {showCurrentPassword ? (
+                    <FaEyeSlash className="text-blue-600 h-6 w-5" />
+                  ) : (
+                    <FaEye className="text-blue-600 h-5 w-5" />
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {/* Nova Senha */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Nova Senha
               </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border focus:outline-none border-gray-300 p-2"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-md border focus:outline-none border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2"
+                  required
+                />
+                <span
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute inset-y-0 right-4 flex items-center cursor-pointer"
+                >
+                  {showNewPassword ? (
+                    <FaEyeSlash className="text-blue-500 h-6 w-5" />
+                  ) : (
+                    <FaEye className="text-blue-500 h-5 w-5" />
+                  )}
+                </span>
+              </div>
             </div>
-            
+
+            {/* Confirmar Senha */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Confirmar Senha
               </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border focus:outline-none border-gray-300 p-2"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-md border focus:outline-none border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2"
+                  required
+                />
+                <span
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-4 flex items-center cursor-pointer"
+                >
+                  {showConfirmPassword ? (
+                    <FaEyeSlash className="text-blue-500 h-6 w-5" />
+                  ) : (
+                    <FaEye className="text-blue-500 h-5 w-5" />
+                  )}
+                </span>
+              </div>
             </div>
           </div>
           
@@ -106,8 +163,9 @@ export const NameModal = ({
             <input
               type="text"
               value={newName}
+              placeholder='Digite o novo nome'
               onChange={(e) => setNewName(e.target.value)}
-              className="mt-1 block w-full rounded-md border focus:outline-none border-gray-300 p-2"
+              className="mt-1 block w-full rounded-md border focus:outline-none border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2"
               required
             />
           </div>
@@ -134,61 +192,136 @@ export const NameModal = ({
 };
 
 // Modal para mudar o email do usuário
+
 export const EmailModal = ({
   isOpen,
   onClose,
-  currentEmail,
   newEmail,
   setNewEmail,
   onSubmit,
   isSubmitting
 }) => {
+  const [currentEmail, setCurrentEmail] = useState('');
+  const [isLoadingEmail, setIsLoadingEmail] = useState(false);
+  const [error, setError] = useState('');
+
+  // Busca o email atual quando o modal é aberto
+  useEffect(() => {
+    if (isOpen) {
+      fetchCurrentEmail();
+    } else {
+      // Limpa os estados quando o modal é fechado
+      setCurrentEmail('');
+      setError('');
+      setNewEmail('');
+    }
+  }, [isOpen, setNewEmail]);
+
+  const fetchCurrentEmail = async () => {
+    setIsLoadingEmail(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Token de autenticação não encontrado');
+      }
+
+      const response = await fetch('http://localhost:3333/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Dados recebidos no modal:', data); // Para debug
+      
+      // CORREÇÃO: Acessar o email através de data.user.email
+      const email = data.user?.email || data.email || 'Não informado';
+      setCurrentEmail(email);
+      
+    } catch (err) {
+      console.error('Erro ao buscar email atual:', err);
+      setError('Erro ao carregar email atual');
+      setCurrentEmail('Erro ao carregar');
+    } finally {
+      setIsLoadingEmail(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-96">
-        <h3 className="text-xl text-stone-700 font-bold mb-4">
+      <div className="bg-white p-6 rounded-lg w-96 max-w-md mx-4">
+        <h2 className="text-xl font-bold mb-4 text-gray-800">
           Alterar E-mail
-        </h3>
-
+        </h2>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+            <button 
+              onClick={fetchCurrentEmail}
+              className="ml-2 text-sm underline hover:no-underline"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+        
         <form onSubmit={onSubmit}>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               E-mail Atual
             </label>
-            <input
-              type="email"
-              value={currentEmail || ''}
-              className="mt-1 block w-full rounded-md border text-black border-gray-500 p-2 bg-gray-200"
-              disabled
-            />
+            <div className="p-3 bg-gray-100 rounded-md border border-gray-500 min-h-[2.5rem] flex items-center">
+              {isLoadingEmail ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-gray-500 text-sm">Carregando...</span>
+                </div>
+              ) : (
+                <span className="text-gray-700 font-medium">
+                  {currentEmail}
+                </span>
+              )}
+            </div>
+          </div>
 
-            <label className="block text-sm font-medium text-gray-700 mt-4">
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Novo E-mail
             </label>
             <input
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Digite o novo e-mail"
               required
+              disabled={isLoadingEmail || isSubmitting}
             />
           </div>
-
-          <div className="mt-6 flex justify-end space-x-3">
+          
+          <div className="flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
+              className="px-4 py-2 text-gray-600 focus:outline-none bg-gray-200 rounded hover:bg-gray-300 transition-colors"
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded focus:outline-none hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting || isLoadingEmail || !currentEmail || currentEmail === 'Erro ao carregar'}
             >
               {isSubmitting ? 'Salvando...' : 'Salvar'}
             </button>

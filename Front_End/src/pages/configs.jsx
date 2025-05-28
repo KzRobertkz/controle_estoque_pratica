@@ -11,29 +11,8 @@ import {
 } from '../components/modal/ConfigModals';
 
 export const Configuracoes = () => {
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch('http://localhost:3333/me', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-
-        const data = await res.json();
-        if (res.ok) setUserData(data);
-      } catch (err) {
-        console.error('Erro ao buscar dados do usuário:', err);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-
   // Estados principais
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [userData, setUserData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -64,12 +43,12 @@ export const Configuracoes = () => {
   };
 
   // Handlers dos modais
-  const handlePasswordSubmit = () => {
+  const handlePasswordSubmit = async () => {
     console.log('Password updated:', newPassword);
     setIsPasswordModalOpen(false);
   };
 
-  const handleNameSubmit = () => {
+  const handleNameSubmit = async () => {
     console.log('Name updated:', newName);
     setIsNameModalOpen(false);
   };
@@ -79,7 +58,7 @@ export const Configuracoes = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/auth/update-email', {
+      const response = await fetch('http://localhost:3333/auth/update-email', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -91,9 +70,7 @@ export const Configuracoes = () => {
       const data = await response.json();
       
       if (!response.ok) {
-        // Trata diferentes tipos de erro
         if (response.status === 400 && data.errors) {
-          // Erro de validação
           throw new Error(data.errors.email?.[0] || data.message || 'Email inválido');
         } else if (data.message?.includes('já está em uso') || data.message?.includes('already')) {
           throw new Error('Este email já está em uso por outro usuário');
@@ -101,12 +78,6 @@ export const Configuracoes = () => {
           throw new Error(data?.message || 'Erro ao alterar email');
         }
       }
-
-      // Atualiza os dados do usuário
-      setUserData(prevData => ({
-        ...prevData,
-        email: newEmail
-      }));
 
       // Limpa campo e fecha o modal
       setNewEmail('');
@@ -116,21 +87,17 @@ export const Configuracoes = () => {
       
     } catch (error) {
       console.error('Erro ao alterar email:', error.message);
-      // O erro será tratado pelo modal
-      throw error;
+      alert(`Erro: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-
-
   const handleDeleteUser = async (password) => {
     setIsDeleting(true);
     
     try {
-      // Faz a requisição para o backend
-      const response = await fetch('/auth/delete-user', {
+      const response = await fetch('http://localhost:3333/auth/delete-user', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -145,16 +112,12 @@ export const Configuracoes = () => {
         throw new Error(data.message || 'Erro ao excluir usuário');
       }
 
-      // Remove o token do localStorage
       localStorage.removeItem('token');
-      
-      // Redireciona para a página de login ou inicial
       window.location.href = '/login';
       
     } catch (error) {
       console.error('Erro ao excluir usuário:', error);
       
-      // Se for erro 404, a rota não existe
       if (error.message && error.message.includes('404')) {
         throw new Error(
           'Rota de exclusão não encontrada. Verifique se a rota foi configurada no backend.'
@@ -356,7 +319,7 @@ export const Configuracoes = () => {
       <NameModal 
         isOpen={isNameModalOpen}
         onClose={() => setIsNameModalOpen(false)}
-        currentName={userData?.name}
+        currentName={''}
         newName={newName}
         setNewName={setNewName}
         onSubmit={handleNameSubmit}
@@ -365,13 +328,11 @@ export const Configuracoes = () => {
       <EmailModal 
         isOpen={isEmailModalOpen}
         onClose={() => setIsEmailModalOpen(false)}
-        currentEmail={userData?.email || ''}
         newEmail={newEmail}
         setNewEmail={setNewEmail}
         onSubmit={handleEmailSubmit}
         isSubmitting={isSubmitting}
       />
-
 
       <DeleteUserModal 
         isOpen={isDeleteModalOpen}
