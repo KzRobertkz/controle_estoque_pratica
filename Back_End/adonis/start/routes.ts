@@ -29,6 +29,12 @@ router.group(() => {
   router.get('/me', [AuthController, 'me']).as('auth.me')
   router.get('/users', [AuthController, 'index']).as('users.index')
 
+  // Rotas do usuário
+  router.put('/auth/update-email', [AuthController, 'updateEmail'])
+  router.put('/auth/update-name', [AuthController, 'updateName'])
+  router.put('/auth/update-password', [AuthController, 'updatePassword'])
+  router.delete('/auth/delete-user', [AuthController, 'deleteUser'])
+
   // Rotas de produtos
   router.get('/products', '#controllers/products_controller.index')
   router.post('/products', '#controllers/products_controller.store')
