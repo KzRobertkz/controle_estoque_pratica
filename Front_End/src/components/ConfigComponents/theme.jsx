@@ -4,6 +4,7 @@ export const ThemeComponent = () => {
 
     const [isDarkMode, setIsDarkMode] = useState(false);
 
+    // Função toggle
     const toggleTheme = () => {
         setIsDarkMode(!isDarkMode);
     };
