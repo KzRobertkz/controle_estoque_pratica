@@ -4,11 +4,15 @@ import dashboardimg from '../assets/dashboard.jpg'
 import leftpart from '../assets/leftpart.png'
 import rightTopPart from '../assets/rightpart.png'
 
+import { FaEye, FaEyeSlash } from 'react-icons/fa6'
+
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const navigate = useNavigate()
+
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -151,14 +155,26 @@ export default function Login() {
                     <label className="block text-sm font-manrope font-semibold text-gray-700 mb-2">
                       Password
                     </label>
-                    <input
-                      type="password"
-                      required
-                      className="w-full px-4 py-3 border border-gray-200 bg-cinza-escuro  rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 font-inter placeholder-gray-400"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
+                    <div className='relative'>
+                      <input
+                        type={showLoginPassword ? 'text' : 'password'}
+                        required
+                        className="w-full px-4 py-3 border border-gray-200 bg-cinza-escuro  rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 font-inter placeholder-gray-400"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                      <span 
+                        onClick={() => setShowLoginPassword((prev) => !prev)}
+                        className='absolute inset-y-0 right-4 flex items-center cursor-pointer'
+                      >
+                        {showLoginPassword ? (
+                          <FaEyeSlash className='text-blue-600 h-6 w-5' />
+                        ) : (
+                          <FaEye className='text-blue-600 h-5 w-5' />
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
 

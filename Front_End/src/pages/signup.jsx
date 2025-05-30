@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import signupDashboard from '../assets/signup_dashboard_image.svg'
+import { FaEye, FaEyeSlash } from 'react-icons/fa6'
 
 export default function Signup() {
   const [fullName, setFullName] = useState('')
@@ -10,6 +11,9 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const navigate = useNavigate()
+
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showConfirmSignupPassword, setShowSignupConfirmPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -45,6 +49,7 @@ export default function Signup() {
       setError('Erro na conexão com o servidor')
     }
   }
+
 
   return (
     <>
@@ -110,28 +115,52 @@ export default function Signup() {
                   <label className="block text-sm font-manrope font-semibold text-gray-700 mb-2">
                     Password
                   </label>
-                  <input
-                    type="password"
-                    required
-                    className="w-full px-4 py-3 border border-gray-200 bg-cinza-escuro rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-inter placeholder-gray-400"
-                    placeholder="Create a password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showSignupPassword ? 'text' : 'password'}
+                      required
+                      className="w-full px-4 py-3 border border-gray-200 bg-cinza-escuro rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-inter placeholder-gray-400"
+                      placeholder="Create a password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <span 
+                      onClick={() => setShowSignupPassword((prev) => !prev)}
+                      className='absolute inset-y-0 right-4 flex items-center cursor-pointer'
+                    >
+                      {showSignupPassword ? (
+                        <FaEyeSlash className='text-blue-600 h-6 w-5' />
+                      ) : (
+                        <FaEye className='text-blue-600 h-5 w-5' />
+                      )}
+                    </span>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-manrope font-semibold text-gray-700 mb-2">
                     Confirm Password
                   </label>
-                  <input
-                    type="password"
-                    required
-                    className="w-full px-4 py-3 border border-gray-200 bg-cinza-escuro rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-inter placeholder-gray-400"
-                    placeholder="Confirm your password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmSignupPassword ? 'text' : 'password'}
+                      required
+                      className="w-full px-4 py-3 border border-gray-200 bg-cinza-escuro rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-inter placeholder-gray-400"
+                      placeholder="Confirm your password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                    <span 
+                      onClick={() => setShowSignupConfirmPassword((prev) => !prev)}
+                      className='absolute inset-y-0 right-4 flex items-center cursor-pointer'
+                    >
+                      {showConfirmSignupPassword ? (
+                        <FaEyeSlash className='text-blue-600 h-6 w-5' />
+                      ) : (
+                        <FaEye className='text-blue-600 h-5 w-5' />
+                      )}
+                    </span>
+                  </div>
                 </div>
               </div>
 
