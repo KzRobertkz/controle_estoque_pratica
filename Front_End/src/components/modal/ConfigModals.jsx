@@ -95,9 +95,9 @@ export const PasswordModal = ({
                   className="absolute inset-y-0 right-4 flex items-center cursor-pointer"
                 >
                   {showNewPassword ? (
-                    <FaEyeSlash className="text-blue-500 h-6 w-5" />
+                    <FaEyeSlash className="text-blue-600 h-6 w-5" />
                   ) : (
-                    <FaEye className="text-blue-500 h-5 w-5" />
+                    <FaEye className="text-blue-600 h-5 w-5" />
                   )}
                 </span>
               </div>
@@ -123,9 +123,9 @@ export const PasswordModal = ({
                   className="absolute inset-y-0 right-4 flex items-center cursor-pointer"
                 >
                   {showConfirmPassword ? (
-                    <FaEyeSlash className="text-blue-500 h-6 w-5" />
+                    <FaEyeSlash className="text-blue-600 h-6 w-5" />
                   ) : (
-                    <FaEye className="text-blue-500 h-5 w-5" />
+                    <FaEye className="text-blue-600 h-5 w-5" />
                   )}
                 </span>
               </div>
