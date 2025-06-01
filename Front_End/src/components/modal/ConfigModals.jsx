@@ -517,14 +517,14 @@ export const DeleteUserModal = ({
               type="button"
               onClick={handleClose}
               disabled={isLoading}
-              className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 focus:outline-none"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isLoading || !password.trim()}
-              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 focus:outline-none"
             >
               {isLoading ? (
                 <>

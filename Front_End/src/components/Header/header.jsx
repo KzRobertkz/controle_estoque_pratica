@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HiArchiveBox, HiHome, HiMagnifyingGlass } from "react-icons/hi2";
 import { AiFillProduct } from "react-icons/ai";
@@ -10,6 +10,7 @@ import { CommandMenu } from './commandbar';
 export default function Header() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [userPhoto, setUserPhoto] = useState(null);
   const navigate = useNavigate();
   const { hideSearch } = useSearch();
 
@@ -27,6 +28,11 @@ export default function Header() {
           const data = await response.json();
           if (response.ok) {
             setUser(data.user);
+            // Carrega a foto do usuário do localStorage
+            const savedPhoto = localStorage.getItem(`userPhoto_${data.user.id}`);
+            if (savedPhoto) {
+              setUserPhoto(savedPhoto);
+            }
           }
         }
       } catch (error) {
@@ -54,10 +60,15 @@ export default function Header() {
 
       localStorage.removeItem("token");
       setUser(null);
+      setUserPhoto(null);
       navigate("/login");
     } catch (error) {
       console.error("Erro na requisição de logout:", error);
     }
+  };
+
+  const handleUserProfileClick = () => {
+    navigate("/configuracoes");
   };
 
   return (
@@ -110,10 +121,21 @@ export default function Header() {
 
             {/* Nome do usuário + logout */}
             <div className="flex items-center gap-8 text-blue-600 hover:text-blue-800">
-              {/* Exibe o primeiro nome */}
+              {/* Exibe a foto e nome do usuário */}
               {user?.fullName && (
-                <div className="flex flex-col items-center text-blue-600 font-medium text-base hover:text-blue-800 transition-transform hover:scale-110">
-                  <CgProfile className="text-4xl" />
+                <div 
+                  onClick={handleUserProfileClick}
+                  className="flex flex-col items-center text-blue-600 font-medium text-base hover:text-blue-800 transition-transform hover:scale-110 cursor-pointer"
+                >
+                  {userPhoto ? (
+                    <img 
+                      src={userPhoto} 
+                      alt="Foto do usuário" 
+                      className="w-10 h-10 rounded-full object-cover border-2 border-blue-200 hover:border-blue-400 transition-colors"
+                    />
+                  ) : (
+                    <CgProfile className="text-4xl" />
+                  )}
                   {user.fullName.split(" ")[0]} 
                 </div>
               )}
@@ -134,5 +156,3 @@ export default function Header() {
     </>
   );
 }
-
-
