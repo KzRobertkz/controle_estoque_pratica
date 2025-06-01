@@ -9,6 +9,7 @@ import { FiSettings, FiAlertTriangle } from 'react-icons/fi';
 // Componentes de configurações 
 import { HideSearchComponent } from '../components/ConfigComponents/hideSearch';
 import { ThemeComponent } from '../components/ConfigComponents/theme';
+import { UserPhotoComponent } from '../components/ConfigComponents/userPhoto';
 
 // Componentes de configurações de risco - Configurações do usuário
 import { EditPasswordComponent } from '../components/ConfigComponents/AreaRiscoComponents/editPassword';
@@ -49,6 +50,7 @@ export const Configuracoes = () => {
 
                 <div className="space-y-3">
                   <HideSearchComponent />
+                  <UserPhotoComponent />
                 </div>
               </div>
             </div>

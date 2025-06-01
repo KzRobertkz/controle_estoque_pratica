@@ -14,7 +14,6 @@ export const HideSearchComponent = () => {
 
 return (
 
-    
         <div className="bg-white rounded-lg p-6 border border-stone-200 w-full">
             <div className="flex items-center justify-between">
                 <div>
