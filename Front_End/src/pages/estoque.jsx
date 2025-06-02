@@ -203,6 +203,14 @@ function Estoque() {
     }
   };
 
+  // Função para determinar se o formulário deve ser mostrado
+  const shouldShowForm = () => {
+    // Mostra o formulário se:
+    // 1. Está editando um produto OU
+    // 2. Não há texto na pesquisa (searchQuery está vazio)
+    return editingProductId !== null || searchQuery.trim() === "";
+  };
+
   // Verificar se há mais de 10 produtos no total para estilizar o botão de próximo
   // Sempre consideramos que há mais de 10 produtos se houver mais de uma página
   const hasMoreThan10Products = meta.lastPage > 1;
@@ -250,70 +258,79 @@ function Estoque() {
                   newParams.set("page", "1"); // Reset to page 1 on search change
                   setSearchParams(newParams);
                 }}
-                className="p-3 mt-6 rounded w-full text-lg placeholder-gray-400 text-white bg-gray-950 hover:bg-gray-900 focus:outline-none focus:bg-gray-900 transition-colors"
+                className="p-3 mt-6 rounded w-full text-lg placeholder-gray-400 text-white bg-cinza-escuro hover:bg-gray-800 focus:outline-none focus:bg-gray-800 transition-colors"
               />
             </div>
 
-            {/* Formulário */}
-            <div className="bg-white text-stone-600 p-8 rounded-lg shadow-lg mb-8">
-              <h2 className="text-2xl font-semibold mb-6">
-                {editingProductId ? "Editar Produto" : "Adicionar Novo Produto"}
-              </h2>
-              <form onSubmit={handleAddProduct}>
-                <div className="grid grid-cols-2 gap-6 mb-6">
-                  <input
-                    type="text"
-                    placeholder="Nome do Produto"
-                    value={newProduct.name}
-                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                    className="p-3 rounded-lg col-span-2 text-lg text-white bg-gray-950 hover:bg-gray-900 placeholder-gray-400 focus:outline-none focus:bg-gray-900 transition-colors"
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Descrição"
-                    value={newProduct.description}
-                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                    className="p-3 rounded-lg col-span-2 text-lg text-white bg-gray-950 hover:bg-gray-900 placeholder-gray-400 focus:outline-none focus:bg-gray-900 transition-colors"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Preço"
-                    value={newProduct.price}
-                    onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                    className="p-3 rounded-lg text-lg text-white bg-gray-950 hover:bg-gray-900 placeholder-gray-400 focus:outline-none focus:bg-gray-900 transition-colors"
-                    required
-                  />
-                  <input
-                    type="number"
-                    placeholder="Estoque"
-                    value={newProduct.stock}
-                    onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                    className="p-3 rounded-lg text-lg text-white bg-gray-950 hover:bg-gray-900 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
-                    required
-                  />
-                </div>
+            {/* Formulário - Renderização condicional */}
+            {shouldShowForm() && (
+              <div className="bg-white text-stone-600 p-8 rounded-lg shadow-lg mb-8">
+                <h2 className="text-2xl font-semibold mb-6">
+                  {editingProductId ? "Editar Produto" : "Adicionar Novo Produto"}
+                </h2>
+                <form onSubmit={handleAddProduct}>
+                  <div className="grid grid-cols-2 gap-6 mb-6">
+                    <input
+                      type="text"
+                      placeholder="Nome do Produto"
+                      value={newProduct.name}
+                      onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                      className="p-3 rounded-lg col-span-2 text-lg text-white bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Descrição"
+                      value={newProduct.description}
+                      onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                      className="p-3 rounded-lg col-span-2 text-lg text-white bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Preço"
+                      value={newProduct.price}
+                      onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                      className="p-3 rounded-lg text-lg text-white bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
+                      required
+                    />
+                    <input
+                      type="number"
+                      placeholder="Estoque"l
+                      value={newProduct.stock}
+                      onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                      className="p-3 rounded-lg text-lg text-white bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
+                      required
+                    />
+                  </div>
 
-                <div className="flex gap-4">
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition focus:outline-none"
-                  >
-                    {editingProductId ? "Atualizar Produto" : "Adicionar Produto"}
-                  </button>
-
-                  {editingProductId && (
+                  <div className="flex gap-4">
                     <button
-                      type="button"
-                      onClick={handleCancelEdit}
-                      className="px-6 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 transition focus:outline-none"
+                      type="submit"
+                      className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition focus:outline-none"
                     >
-                      Cancelar
+                      {editingProductId ? "Atualizar Produto" : "Adicionar Produto"}
                     </button>
-                  )}
-                </div>
-              </form>
-            </div>
+
+                    {editingProductId && (
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        className="px-6 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 transition focus:outline-none"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Mensagem informativa quando o formulário está escondido */}
+            {!shouldShowForm() && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+                <p>💡 O formulário de adicionar produto está oculto durante a pesquisa. Clique em "Editar" em qualquer produto para editá-lo, ou limpe a pesquisa para adicionar novos produtos.</p>
+              </div>
+            )}
 
             {/* Lista de Produtos */}
             <div className="grid grid-cols-1 gap-6">
@@ -332,13 +349,13 @@ function Estoque() {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleEditProduct(product)}
-                          className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
+                          className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition focus:outline-none"
                         >
                           Editar
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+                          className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition focus:outline-none"
                         >
                           Excluir
                         </button>
