@@ -311,6 +311,10 @@ function Estoque() {
                       {editingProductId ? "Atualizar Produto" : "Adicionar Produto"}
                     </button>
 
+                    <button className="px-4 py-2 ml-28 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none">
+                      Escolher Categoria
+                    </button>
+
                     {editingProductId && (
                       <button
                         type="button"

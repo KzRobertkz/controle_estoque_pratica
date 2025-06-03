@@ -6,9 +6,13 @@ import { Sidebar } from "../components/Sidebar/sidebar"
 import { MdOutlineInventory2 } from "react-icons/md"
 import { EditModal } from '../components/modal/editmodal';
 import { DetailsModal } from '../components/modal/detailsmodal';
+import { CreateCategoryModal } from '../components/modal/newcategorymodal';
+import { FilterModal } from '../components/modal/filtermodal';
+import { FaFilter } from "react-icons/fa";
 
 export const Produtos = () => {
   const [allProdutos, setAllProdutos] = useState([]); // Todos os produtos carregados
+  const [categories, setCategories] = useState([]); // Lista de categorias
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -19,6 +23,23 @@ export const Produtos = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Estados para modal de categoria
+  const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryDescription, setCategoryDescription] = useState('');
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
+
+  // Estados para modal de filtros
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    category: '',
+    minPrice: '',
+    maxPrice: '',
+    minStock: '',
+    maxStock: '',
+    id: ''
+  });
 
   const itemsPerPage = 20;
 
@@ -37,18 +58,112 @@ export const Produtos = () => {
     return config;
   });
 
-  // Filtrar produtos baseado na busca
-  const filteredProdutos = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return allProdutos;
+  // Função para buscar categorias
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get("/categories");
+      setCategories(response.data.data || response.data || []);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+      setCategories([]);
+    }
+  };
+
+  // Função para criar nova categoria
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    
+    if (!categoryName.trim()) {
+      setError('Nome da categoria é obrigatório');
+      return;
     }
 
-    return allProdutos.filter(produto => 
-      produto.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      produto.id.toString().includes(searchQuery) ||
-      (produto.category && produto.category.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [allProdutos, searchQuery]);
+    setIsSubmittingCategory(true);
+    try {
+      const categoryData = {
+        name: categoryName.trim(),
+        description: categoryDescription.trim() || null
+      };
+
+      const response = await api.post("/categories", categoryData);
+      
+      // Adicionar nova categoria à lista
+      setCategories(prev => [...prev, response.data]);
+      
+      // Fechar modal e limpar estados
+      setIsCreateCategoryModalOpen(false);
+      setCategoryName('');
+      setCategoryDescription('');
+      
+      setSuccessMessage('Categoria criada com sucesso!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Erro ao criar categoria:', error);
+      let errorMessage = 'Erro ao criar categoria.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      setError(errorMessage);
+    } finally {
+      setIsSubmittingCategory(false);
+    }
+  };
+
+  // Aplicar filtros aos produtos
+  const applyFiltersToProducts = (products, appliedFilters) => {
+    return products.filter(produto => {
+      // Filtro por ID
+      if (appliedFilters.id && !produto.id.toString().includes(appliedFilters.id)) {
+        return false;
+      }
+      
+      // Filtro por categoria
+      if (appliedFilters.category && produto.category_id !== parseInt(appliedFilters.category)) {
+        return false;
+      }
+      
+      // Filtro por preço mínimo
+      if (appliedFilters.minPrice && parseFloat(produto.price) < parseFloat(appliedFilters.minPrice)) {
+        return false;
+      }
+      
+      // Filtro por preço máximo
+      if (appliedFilters.maxPrice && parseFloat(produto.price) > parseFloat(appliedFilters.maxPrice)) {
+        return false;
+      }
+      
+      // Filtro por estoque mínimo
+      if (appliedFilters.minStock && parseInt(produto.stock) < parseInt(appliedFilters.minStock)) {
+        return false;
+      }
+      
+      // Filtro por estoque máximo
+      if (appliedFilters.maxStock && parseInt(produto.stock) > parseInt(appliedFilters.maxStock)) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
+
+  // Filtrar produtos baseado na busca e filtros
+  const filteredProdutos = useMemo(() => {
+    let filtered = allProdutos;
+
+    // Aplicar busca por texto
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(produto => 
+        produto.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        produto.id.toString().includes(searchQuery) ||
+        (produto.category && produto.category.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    // Aplicar filtros
+    filtered = applyFiltersToProducts(filtered, filters);
+
+    return filtered;
+  }, [allProdutos, searchQuery, filters]);
 
   // Calcular produtos da página atual
   const paginatedProdutos = useMemo(() => {
@@ -147,9 +262,9 @@ export const Produtos = () => {
     setSearchParams(newParams, { replace: true });
   };
 
-  // Inicialização - carrega todos os produtos uma única vez
+  // Inicialização - carrega todos os produtos e categorias
   useEffect(() => {
-    fetchAllProdutos();
+    Promise.all([fetchAllProdutos(), fetchCategories()]);
     
     // Recuperar estado da URL
     const searchFromParams = searchParams.get("search") || "";
@@ -159,7 +274,7 @@ export const Produtos = () => {
     setCurrentPage(pageFromParams);
   }, []);
 
-  // Quando a busca muda, resetar para página 1
+  // Quando a busca ou filtros mudam, resetar para página 1
   useEffect(() => {
     setCurrentPage(1);
     
@@ -172,7 +287,7 @@ export const Produtos = () => {
       newParams.delete("search");
     }
     setSearchParams(newParams, { replace: true });
-  }, [searchQuery]);
+  }, [searchQuery, filters]);
 
   // Scroll para o topo quando mudar de página
   useEffect(() => {
@@ -257,6 +372,32 @@ export const Produtos = () => {
     setSearchQuery(e.target.value);
   };
 
+  // Funções para o modal de filtros
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    const emptyFilters = {
+      category: '',
+      minPrice: '',
+      maxPrice: '',
+      minStock: '',
+      maxStock: '',
+      id: ''
+    };
+    setFilters(emptyFilters);
+  };
+
+  // Verificar se há filtros ativos
+  const hasActiveFilters = Object.values(filters).some(value => value !== '');
+
+  // Função para obter nome da categoria
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : 'Sem categoria';
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen">
@@ -289,9 +430,25 @@ export const Produtos = () => {
               <div className='flex items-center gap-4'>
                 <div className='text-sm text-stone-500'>
                   Total: {allProdutos.length} produtos
+                  {hasActiveFilters && ` | Filtrados: ${filteredProdutos.length}`}
                 </div>
-                <button className="px-4 py-2 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none">
+                <button 
+                  onClick={() => setIsCreateCategoryModalOpen(true)}
+                  className="px-4 py-2 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none"
+                >
                   Nova Categoria
+                </button>
+                <button 
+                  onClick={() => setIsFilterModalOpen(true)}
+                  className={`flex gap-2 px-4 py-2 rounded transition-colors duration-200 focus:outline-none ${
+                    hasActiveFilters 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-zinc-700 text-white hover:bg-zinc-500'
+                  }`}
+                >
+                  Filtrar
+                  <FaFilter className='text-base mt-1'/>
+                  {hasActiveFilters && <span className="bg-white text-blue-600 rounded-full px-2 py-0.5 text-xs font-bold">!</span>}
                 </button>
               </div>
             </div>
@@ -302,12 +459,24 @@ export const Produtos = () => {
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 {error}
+                <button 
+                  onClick={() => setError('')}
+                  className="float-right text-red-500 hover:text-red-700 font-bold"
+                >
+                  ×
+                </button>
               </div>
             )}
 
             {successMessage && (
               <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
                 {successMessage}
+                <button 
+                  onClick={() => setSuccessMessage('')}
+                  className="float-right text-green-500 hover:text-green-700 font-bold"
+                >
+                  ×
+                </button>
               </div>
             )}
 
@@ -320,10 +489,34 @@ export const Produtos = () => {
                 onChange={handleSearchChange}
                 className="w-full p-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              {searchQuery && (
-                <p className="text-sm text-stone-500 mt-2">
-                  Mostrando {filteredProdutos.length} resultado{filteredProdutos.length !== 1 ? 's' : ''} para "{searchQuery}"
-                </p>
+              {(searchQuery || hasActiveFilters) && (
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-sm text-stone-500">
+                    Mostrando {filteredProdutos.length} resultado{filteredProdutos.length !== 1 ? 's' : ''}
+                    {searchQuery && ` para "${searchQuery}"`}
+                    {hasActiveFilters && " (com filtros aplicados)"}
+                  </p>
+                  {(searchQuery || hasActiveFilters) && (
+                    <div className="flex gap-2">
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 focus:outline-none"
+                        >
+                          Limpar Busca
+                        </button>
+                      )}
+                      {hasActiveFilters && (
+                        <button
+                          onClick={handleClearFilters}
+                          className="px-3 py-1 bg-blue-200 text-blue-700 text-sm rounded hover:bg-blue-300 focus:outline-none"
+                        >
+                          Limpar Filtros
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
@@ -339,7 +532,9 @@ export const Produtos = () => {
                       <h4 className="text-lg font-semibold text-stone-700">{produto.name}</h4>
                       <p className="text-stone-600">Código: #{produto.id}</p>
                       <p className="text-stone-600">Quantidade: {produto.stock}</p>
-                      <p className="text-stone-600">Categoria: {produto.category || 'Sem categoria'}</p>
+                      <p className="text-stone-600">
+                        Categoria: {getCategoryName(produto.category_id)}
+                      </p>
                       <p className="text-lg font-medium text-stone-700">{formatarPreco(produto.price)}</p>
                       <div className="mt-4 flex justify-end gap-2">
                         <button 
@@ -367,19 +562,31 @@ export const Produtos = () => {
               ) : (
                 <div className="col-span-full flex flex-col items-center justify-center py-12">
                   <p className="text-lg text-stone-500 mb-4">
-                    {searchQuery.trim() !== "" 
-                      ? `Nenhum produto encontrado para "${searchQuery}"` 
+                    {searchQuery.trim() !== "" || hasActiveFilters
+                      ? "Nenhum produto encontrado com os critérios especificados" 
                       : "Nenhum produto encontrado"
                     }
                   </p>
                   
-                  {searchQuery.trim() !== "" && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none"
-                    >
-                      Limpar Busca
-                    </button>
+                  {(searchQuery.trim() !== "" || hasActiveFilters) && (
+                    <div className="flex gap-2">
+                      {searchQuery.trim() !== "" && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none"
+                        >
+                          Limpar Busca
+                        </button>
+                      )}
+                      {hasActiveFilters && (
+                        <button
+                          onClick={handleClearFilters}
+                          className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 focus:outline-none"
+                        >
+                          Limpar Filtros
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -450,11 +657,11 @@ export const Produtos = () => {
                   <div className="text-center text-sm text-stone-600">
                     {(() => {
                       const { start, end } = calculateItemRange();
-                      const hasSearch = searchQuery.trim() !== "";
+                      const hasFilters = searchQuery.trim() !== "" || hasActiveFilters;
                       
                       if (meta.total === 0) {
-                        return hasSearch 
-                          ? `Nenhum resultado encontrado para "${searchQuery}"` 
+                        return hasFilters 
+                          ? "Nenhum resultado encontrado com os critérios especificados" 
                           : "Nenhum produto cadastrado";
                       }
                       
@@ -465,7 +672,7 @@ export const Produtos = () => {
                           </div>
                           <div>
                             Mostrando {start} - {end} de {meta.total} {meta.total === 1 ? 'produto' : 'produtos'}
-                            {hasSearch && ` encontrado${meta.total !== 1 ? 's' : ''}`}
+                            {hasFilters && ` encontrado${meta.total !== 1 ? 's' : ''}`}
                           </div>
                         </>
                       );
@@ -478,11 +685,11 @@ export const Produtos = () => {
               {meta.lastPage === 1 && meta.total > 0 && (
                 <div className="text-center text-sm text-stone-600 mt-4">
                   {(() => {
-                    const hasSearch = searchQuery.trim() !== "";
+                    const hasFilters = searchQuery.trim() !== "" || hasActiveFilters;
                     return (
                       <div>
                         Mostrando {meta.total === 1 ? '1 produto' : `todos os ${meta.total} produtos`}
-                        {hasSearch && ` encontrado${meta.total !== 1 ? 's' : ''}`}
+                        {hasFilters && ` encontrado${meta.total !== 1 ? 's' : ''}`}
                       </div>
                     );
                   })()}
@@ -493,6 +700,7 @@ export const Produtos = () => {
         </div>
       </div>
       
+      {/* Modais existentes */}
       <EditModal 
         isOpen={isEditModalOpen}
         onClose={() => {
@@ -503,6 +711,7 @@ export const Produtos = () => {
         onSave={handleUpdate}
         onChange={setEditingProduct}
       />
+      
       <DetailsModal 
         isOpen={isDetailsModalOpen}
         onClose={() => {
@@ -510,6 +719,29 @@ export const Produtos = () => {
           setSelectedProduct(null);
         }}
         produto={selectedProduct}
+      />
+
+      {/* Modal para criar categoria */}
+      <CreateCategoryModal
+        isOpen={isCreateCategoryModalOpen}
+        onClose={() => setIsCreateCategoryModalOpen(false)}
+        categoryName={categoryName}
+        setCategoryName={setCategoryName}
+        categoryDescription={categoryDescription}
+        setCategoryDescription={setCategoryDescription}
+        onSubmit={handleCreateCategory}
+        isSubmitting={isSubmittingCategory}
+      />
+
+      {/* Modal de filtros */}
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        filters={filters}
+        setFilters={setFilters}
+        categories={categories}
+        onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
       />
     </div>
   );
