@@ -40,6 +40,13 @@ router.group(() => {
   router.post('/products', '#controllers/products_controller.store')
   router.put('/products/:id', '#controllers/products_controller.update')
   router.delete('/products/:id', '#controllers/products_controller.destroy')
+
+  // Rotas de Categorias dos produtos
+  router.get('/categories', '#controllers/categories_controller.index')
+  router.post('/categories', '#controllers/categories_controller.store')
+  router.get('/categories/:id', '#controllers/categories_controller.show')
+  router.put('/categories/:id', '#controllers/categories_controller.update')
+  router.delete('/categories/:id', '#controllers/categories_controller.destroy')
   
   // Rotas de consultas específicas de produtos
   router.get('/products/recent', '#controllers/products_controller.getRecent')
