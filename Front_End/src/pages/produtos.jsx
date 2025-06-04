@@ -19,6 +19,7 @@ import { DetailsModal } from '../components/modal/detailsmodal';
 import { CreateCategoryModal } from '../components/modal/newcategorymodal';
 import { ManageCategorysModal } from '../components/modal/categorysmodal';
 import { FilterModal } from '../components/modal/filtermodal';
+import { ManageProductsModal } from '../components/modal/manageproductsmodal';
 
 export const Produtos = () => {
   // 1. ESTADOS
@@ -34,6 +35,7 @@ export const Produtos = () => {
   const [allProdutos, setAllProdutos] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  
 
   // Estados de Modais
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -41,6 +43,8 @@ export const Produtos = () => {
   const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
   const [isManageCategorysModalOpen, setIsManageCategorysModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isManageProductsModalOpen, setIsManageProductsModalOpen] = useState(false);
+  const [selectedProductForManagement, setSelectedProductForManagement] = useState(null);
 
   // Estados de Categoria
   const [categories, setCategories] = useState([]);
@@ -236,6 +240,27 @@ export const Produtos = () => {
   };
 
   // 5. HANDLERS
+  const handleSaveProductSettings = async (settings) => {
+    try {
+      // Fazer a chamada API para salvar as configurações
+      await api.put(`/products/${selectedProductForManagement.id}/settings`, settings);
+      
+      // Atualizar o produto na lista
+      setAllProdutos(prevProdutos => 
+        prevProdutos.map(p => 
+          p.id === selectedProductForManagement.id 
+            ? { ...p, ...settings }
+            : p
+        )
+      );
+      
+      setSuccessMessage('Configurações salvas com sucesso!');
+    } catch (error) {
+      setError('Erro ao salvar as configurações');
+      console.error(error);
+    }
+  };
+
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
@@ -515,11 +540,17 @@ export const Produtos = () => {
                 </h3>
               </div>
 
-              <div className='flex items-center gap-4 ml-96 pl-40'>
+              <div className='flex items-center gap-4 ml-96 pl-10'>
                 <div className='text-sm text-stone-500'>
                   Total: {allProdutos.length} produtos
                   {hasActiveFilters && ` | Filtrados: ${filteredProdutos.length}`}
                 </div>
+                <button 
+                  onClick={() => setIsManageProductsModalOpen(true)}
+                  className="px-4 py-2 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none"
+                >
+                  Gerenciar Produtos
+                </button>
                 <button 
                   onClick={() => setIsCreateCategoryModalOpen(true)}
                   className="px-4 py-2 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none"
@@ -841,6 +872,17 @@ export const Produtos = () => {
         categories={categories}
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
+      />
+
+      {/* Modal de gerenciamento de produtos */}
+      <ManageProductsModal 
+        isOpen={isManageProductsModalOpen}
+        onClose={() => {
+          setIsManageProductsModalOpen(false);
+          setSelectedProductForManagement(null);
+        }}
+        product={selectedProductForManagement}
+        onSave={handleSaveProductSettings}
       />
     </div>
   );

@@ -1,24 +1,52 @@
-// React e hooks
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-
-// Bibliotecas externas
 import axios from 'axios';
-
-// Componentes
 import Header from "../components/Header/header";
 import { Sidebar } from "../components/Sidebar/sidebar";
 import { ChooseCategoryModal } from "../components/modal/choosecategorymodal";
 
+import { useSearchParams } from "react-router-dom";
+
 function Estoque() {
-  // 1. ESTADOS
-  // Estados de UI
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState("");
-  
-  // Estados de Produtos
+
+  // Estados para modal de escolher a categoria
+  const [isChooseCategoryModalOpen, setIsChooseCategoryModalOpen] = useState(false);
+  const [categories, setCategories] = useState([]); // Lista de categorias
+  const [selectedCategoryId, setSelectedCategoryId] = useState(""); // Categoria selecionada
+
+  const api = axios.create({
+    baseURL: "http://localhost:3333",
+    withCredentials: true,
+  });
+
+  // Função para buscar as categorias
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get("/categories");
+      setCategories(response.data.data || response.data || []);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+      setCategories([]);
+    }
+  };
+
+  // Carregar categorias ao montar o componente
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const applyFiltersToProducts = (products, appliedFilters) => {
+    return products.filter(produto => {
+      
+      // Filtro por categoria
+      if (appliedFilters.category && produto.category_id !== parseInt(appliedFilters.category)) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
+
+  // Mecanicas dos Produtos
   const [products, setProducts] = useState([]);
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -28,30 +56,18 @@ function Estoque() {
     category_id: ""
   });
   const [editingProductId, setEditingProductId] = useState(null);
-  
-  // Estados de Categoria
-  const [isChooseCategoryModalOpen, setIsChooseCategoryModalOpen] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState("");
-  
-  // Estados de Paginação
-  const [meta, setMeta] = useState({ 
-    currentPage: 1, 
-    lastPage: 1, 
-    total: 0, 
-    perPage: 10, 
-    firstPage: 1 
-  });
+
+  // Mecanicas de pesquisa
+  const [meta, setMeta] = useState({ currentPage: 1, lastPage: 1, total: 0, perPage: 10, firstPage: 1 });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  // Extraindo a página atual dos parâmetros da URL mais explicitamente
   const pageParam = searchParams.get("page");
   const page = pageParam ? Number(pageParam) : 1;
 
-  // 2. CONFIGURAÇÃO DA API
-  const api = axios.create({
-    baseURL: "http://localhost:3333",
-    withCredentials: true,
-  });
-
-  // Interceptors
+  // Debug intercept para verificar todas as chamadas API
   api.interceptors.response.use(
     (response) => {
       console.log("API Response Success:", response.config.url, response.data);
@@ -72,45 +88,41 @@ function Estoque() {
     return config;
   });
 
-  // 3. FUNÇÕES AUXILIARES
+  // Função para calcular o range dos itens mostrados
   const calculateItemRange = () => {
     if (meta.total === 0) return { start: 0, end: 0 };
+    
     const start = ((meta.currentPage - 1) * meta.perPage) + 1;
     const end = Math.min(meta.currentPage * meta.perPage, meta.total);
+    
     return { start, end };
   };
 
-  const shouldShowForm = () => {
-    return editingProductId !== null || searchQuery.trim() === "";
-  };
-
-  const getCategoryName = (categoryId) => {
-    if (!categoryId) return "";
-    const category = categories.find(cat => cat.id === parseInt(categoryId));
-    return category ? category.name : "";
-  };
-
-  // 4. FUNÇÕES DE API
-  const fetchCategories = async () => {
-    try {
-      const response = await api.get("/categories");
-      setCategories(response.data.data || response.data || []);
-    } catch (error) {
-      console.error('Erro ao buscar categorias:', error);
-      setCategories([]);
-    }
-  };
-
+  // Funções 
   const fetchProducts = async (pageNumber = 1, query = "") => {
     try {
-      const response = await api.get("/products", {
-        params: { page: pageNumber, search: query }
+      console.log(`Fazendo requisição para página ${pageNumber} com busca "${query}"`);
+      
+      const res = await api.get("/products", {
+        params: { page: pageNumber, search: query },
       });
       
-      const data = Array.isArray(response.data.data) ? response.data.data : [];
-      const metaData = response.data.meta || {};
+      console.log("Resposta completa da API:", res.data);
       
-      setProducts([...data].sort((a, b) => b.id - a.id));
+      const data = Array.isArray(res.data.data) ? res.data.data : [];
+      const metaData = res.data.meta || {};
+      
+      // Debug: Verificar se os produtos têm category_id
+      console.log("Produtos recebidos:", data.map(p => ({
+        id: p.id,
+        name: p.name,
+        category_id: p.category_id
+      })));
+      
+      // Ordena os produtos por ID em ordem decrescente
+      const sortedData = [...data].sort((a, b) => b.id - a.id);
+      
+      setProducts(sortedData);
       setMeta({
         currentPage: Number(metaData.currentPage || pageNumber),
         lastPage: Number(metaData.lastPage || Math.ceil(data.length / 10)),
@@ -118,21 +130,81 @@ function Estoque() {
         perPage: Number(metaData.perPage || 10),
         firstPage: Number(metaData.firstPage || 1)
       });
-      
+
       setError("");
     } catch (err) {
-      setError(err.response?.status === 401 
-        ? "Você precisa estar logado para visualizar produtos."
-        : "Erro ao carregar produtos. Por favor, tente novamente."
-      );
+      console.error("Erro ao buscar produtos:", err);
+      if (err.response && err.response.status === 401) {
+        setError("Você precisa estar logado para visualizar produtos.");
+      } else {
+        setError("Erro ao carregar produtos. Por favor, tente novamente.");
+      }
     }
   };
 
-  // 5. HANDLERS
+  const goToPage = (pageNumber) => {
+    if (pageNumber < 1 || pageNumber > meta.lastPage) return;
+    
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", pageNumber.toString());
+    setSearchParams(newParams);
+  };
+
+  // Efeitos
+  // Inicializa o valor de busca a partir dos parâmetros da URL
+  useEffect(() => {
+    const searchFromParams = searchParams.get("search") || "";
+    const newPage = Number(searchParams.get("page") || "1");
+
+    if (searchQuery !== searchFromParams) {
+      setSearchQuery(searchFromParams);
+    }
+
+    fetchProducts(newPage, searchFromParams);
+  }, [searchParams]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [searchParams]);
+
+  // Função para lidar com a seleção de categoria
   const handleCategorySelect = (categoryId) => {
     const categoryIdString = categoryId.toString();
+    console.log("Categoria selecionada:", categoryIdString);
+    
+    // Atualizar ambos os estados de forma consistente
     setSelectedCategoryId(categoryIdString);
-    setNewProduct(prev => ({ ...prev, category_id: categoryIdString }));
+    setNewProduct(prev => ({ 
+      ...prev, 
+      category_id: categoryIdString 
+    }));
+    
+    console.log("Estados após seleção:", {
+      selectedCategoryId: categoryIdString,
+      newProduct_category_id: categoryIdString
+    });
+  };
+
+  // Função para obter o nome da categoria
+  const getCategoryName = (categoryId) => {
+    console.log("getCategoryName chamada com:", categoryId); // Debug
+    
+    if (!categoryId) {
+      console.log("getCategoryName: categoryId vazio ou null");
+      return "";
+    }
+    
+    const category = categories.find(cat => cat.id === parseInt(categoryId));
+    const categoryName = category ? category.name : "";
+    
+    console.log("getCategoryName resultado:", {
+      categoryId: categoryId,
+      parsed: parseInt(categoryId),
+      found: category,
+      name: categoryName
+    }); // Debug
+    
+    return categoryName;
   };
 
   const handleAddProduct = async (e) => {
@@ -237,7 +309,7 @@ function Estoque() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Função para cancelar edição
+  // Função para cancelar edição - CORRIGIDA
   const handleCancelEdit = () => {
     setNewProduct({ name: '', description: '', price: '', stock: '', category_id: '' });
     setSelectedCategoryId("");
@@ -275,48 +347,32 @@ function Estoque() {
     }
   };
 
-  const goToPage = (pageNumber) => {
-    if (pageNumber < 1 || pageNumber > meta.lastPage) return;
-    
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set("page", pageNumber.toString());
-    setSearchParams(newParams);
+  // Função para determinar se o formulário deve ser mostrado
+  const shouldShowForm = () => {
+    // Mostra o formulário se:
+    // 1. Está editando um produto OU
+    // 2. Não há texto na pesquisa (searchQuery está vazio)
+    return editingProductId !== null || searchQuery.trim() === "";
   };
 
-  // 6. EFFECTS
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  // Verificar se há mais de 10 produtos no total para estilizar o botão de próximo
+  // Sempre consideramos que há mais de 10 produtos se houver mais de uma página
+  const hasMoreThan10Products = meta.lastPage > 1;
 
-  useEffect(() => {
-    const searchFromParams = searchParams.get("search") || "";
-    const newPage = Number(searchParams.get("page") || "1");
-
-    if (searchQuery !== searchFromParams) {
-      setSearchQuery(searchFromParams);
-    }
-
-    fetchProducts(newPage, searchFromParams);
-  }, [searchParams]);
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [searchParams]);
+  console.log("Renderizando com meta:", meta);
+  console.log("Condição de renderização da paginação:", meta.lastPage > 1);
 
   return (
     <div className="min-h-screen">
       <Header />
       <div className="grid grid-cols-[220px,1fr] gap-2 p-2">
         <Sidebar />
-        <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide">
-          <div className='border-b border-stone-400 px-32 mb-4 pb-4 sticky top-0 bg-white z-10'>
-            <h1 className="text-2xl flex justify-center font-semibold text-stone-700 py-6 px-96 ">
+        <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide px-96">
+          <div className="p-6">
+            <h1 className="text-2xl flex justify-center font-semibold text-stone-700 mb-4">
               Estoque de Produtos
             </h1>
-          </div>
 
-          {/* Container do Form */}
-          <div className="max-w-xl mx-auto px-2"> {/* Reduz a largura máxima e adiciona padding */}
             {/* Mensagens */}
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -330,7 +386,7 @@ function Estoque() {
               </div>
             )}
 
-            {/* Barra de pesquisa com largura total do container */}
+            {/* Barra de pesquisa */}
             <div className="mb-4">
               <input
                 type="text"
@@ -350,14 +406,14 @@ function Estoque() {
               />
             </div>
 
-            {/* Formulário */}
+            {/* Formulário - Renderização condicional */}
             {shouldShowForm() && (
-              <div className="bg-white text-stone-600 p-6 rounded-lg shadow-xl border border-stone-300 mb-8"> {/* Padding do form */}
-                <h2 className="text-2xl font-semibold mb-4"> {/* Margem inferior */}
+              <div className="bg-white text-stone-600 p-8 rounded-lg shadow-lg mb-8">
+                <h2 className="text-2xl font-semibold mb-6">
                   {editingProductId ? "Editar Produto" : "Adicionar Novo Produto"}
                 </h2>
                 <form onSubmit={handleAddProduct}>
-                  <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-2 gap-6 mb-6">
                     <input
                       type="text"
                       placeholder="Nome do Produto"
@@ -450,10 +506,10 @@ function Estoque() {
             )}
 
             {/* Lista de Produtos */}
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-6">
               {products.length > 0 ? (
                 products.map((product) => (
-                  <div key={product.id} className="bg-white p-6 rounded-lg hover:border-blue-300 shadow-lg hover:shadow-xl transition border-l-4 border-blue-500">
+                  <div key={product.id} className="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition border-l-4 border-blue-500">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         {/* Cabeçalho com nome e categoria */}
@@ -543,18 +599,9 @@ function Estoque() {
                           onClick={() => handleDeleteProduct(product.id)}
                           className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition focus:outline-none flex items-center gap-2"
                         >
-                          <svg 
-                            className="w-4 h-4" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                              strokeWidth={2} 
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414L7.586 12l-1.293 1.293a1 1 0 101.414 1.414L9 13.414l1.293 1.293a1 1 0 001.414-1.414L10.414 12l1.293-1.293z" clipRule="evenodd" />
                           </svg>
                           Excluir
                         </button>
@@ -590,8 +637,8 @@ function Estoque() {
               )}
             </div>
 
-            {/* Paginação */}
-            <div className="mt-6 mb-8">
+            {/* Paginação separada */}
+            <div className="mt-6">
               {console.log("Estado atual do meta:", meta)} {/* Debug */}
               {meta.lastPage > 1 && (
                 <div className="flex flex-col items-center gap-4">

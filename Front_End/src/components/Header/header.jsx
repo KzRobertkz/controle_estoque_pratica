@@ -6,11 +6,14 @@ import { BiLogOut } from "react-icons/bi";
 import { CgProfile } from "react-icons/cg";
 import { useSearch } from "./searchcontent";
 import { CommandMenu } from './commandbar';
+import { FaRegBell } from "react-icons/fa";
+import {NotificationsModal}  from "../modal/notificationsmodal";
 
 export default function Header() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [userPhoto, setUserPhoto] = useState(null);
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const navigate = useNavigate();
   const { hideSearch } = useSearch();
 
@@ -119,13 +122,24 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Nome do usuário + logout */}
-            <div className="flex items-center gap-8 text-blue-600 hover:text-blue-800">
+            {/* Nome do usuário + logout + notificações */}
+            <div className="flex items-center gap-4 text-blue-600 hover:text-blue-800">
+              {/* notificações */}
+              <div 
+                onClick={() => setIsNotificationsModalOpen(true)}
+                className="flex flex-col items-center text-blue-600 font-medium text-base hover:text-blue-800 transition-transform hover:scale-110 cursor-pointer"
+              >
+                <FaRegBell className="text-4xl" />
+                <span>
+                  Notificações
+                </span>
+              </div>
+
               {/* Exibe a foto e nome do usuário */}
               {user?.fullName && (
                 <div 
                   onClick={handleUserProfileClick}
-                  className="flex flex-col items-center text-blue-600 font-medium text-base hover:text-blue-800 transition-transform hover:scale-110 cursor-pointer"
+                  className="flex flex-col items-center text-blue-600 font-medium text-base hover:text-blue-800 transition-transform hover:scale-110 cursor-pointer mr-4"
                 >
                   {userPhoto ? (
                     <img 
@@ -142,7 +156,7 @@ export default function Header() {
 
               <div onClick={handleLogout} className="cursor-pointer py-0 flex flex-col items-end text-blue-600 hover:text-blue-800 transition-transform hover:scale-110">
                 <BiLogOut className="text-4xl" />
-                <span className="text-base text-blue-700">Sair</span>
+                <span className="text-base font-medium text-blue-700">Sair</span>
               </div>
             </div>
           </div>
@@ -153,6 +167,11 @@ export default function Header() {
           </div>
         )}
       </header>
+
+      <NotificationsModal 
+        isOpen={isNotificationsModalOpen}
+        onClose={() => setIsNotificationsModalOpen(false)}
+      />
     </>
   );
 }
