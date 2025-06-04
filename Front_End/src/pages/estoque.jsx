@@ -308,14 +308,15 @@ function Estoque() {
       <Header />
       <div className="grid grid-cols-[220px,1fr] gap-2 p-2">
         <Sidebar />
-        <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide mx-96">
-          <div className='border-b border-stone-400 px-6 mb-4 pb-4 sticky top-0 bg-white z-10'>
-            <h1 className="text-2xl flex justify-center font-semibold text-stone-700 py-6">
+        <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide">
+          <div className='border-b border-stone-400 px-32 mb-4 pb-4 sticky top-0 bg-white z-10'>
+            <h1 className="text-2xl flex justify-center font-semibold text-stone-700 py-6 px-96 ">
               Estoque de Produtos
             </h1>
           </div>
 
-          <div className="px-6">
+          {/* Container do Form */}
+          <div className="max-w-xl mx-auto px-2"> {/* Reduz a largura máxima e adiciona padding */}
             {/* Mensagens */}
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -329,7 +330,7 @@ function Estoque() {
               </div>
             )}
 
-            {/* Barra de pesquisa */}
+            {/* Barra de pesquisa com largura total do container */}
             <div className="mb-4">
               <input
                 type="text"
@@ -349,14 +350,14 @@ function Estoque() {
               />
             </div>
 
-            {/* Formulário - Renderização condicional */}
+            {/* Formulário */}
             {shouldShowForm() && (
-              <div className="bg-white text-stone-600 p-8 rounded-lg shadow-lg mb-8">
-                <h2 className="text-2xl font-semibold mb-6">
+              <div className="bg-white text-stone-600 p-6 rounded-lg shadow-xl border border-stone-300 mb-8"> {/* Padding do form */}
+                <h2 className="text-2xl font-semibold mb-4"> {/* Margem inferior */}
                   {editingProductId ? "Editar Produto" : "Adicionar Novo Produto"}
                 </h2>
                 <form onSubmit={handleAddProduct}>
-                  <div className="grid grid-cols-2 gap-6 mb-6">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
                     <input
                       type="text"
                       placeholder="Nome do Produto"
@@ -449,10 +450,10 @@ function Estoque() {
             )}
 
             {/* Lista de Produtos */}
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-4">
               {products.length > 0 ? (
                 products.map((product) => (
-                  <div key={product.id} className="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition border-l-4 border-blue-500">
+                  <div key={product.id} className="bg-white p-6 rounded-lg hover:border-blue-300 shadow-lg hover:shadow-xl transition border-l-4 border-blue-500">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         {/* Cabeçalho com nome e categoria */}
@@ -542,9 +543,18 @@ function Estoque() {
                           onClick={() => handleDeleteProduct(product.id)}
                           className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition focus:outline-none flex items-center gap-2"
                         >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L10.414 12l1.293-1.293z" clipRule="evenodd" />
+                          <svg 
+                            className="w-4 h-4" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                           </svg>
                           Excluir
                         </button>
@@ -580,8 +590,8 @@ function Estoque() {
               )}
             </div>
 
-            {/* Paginação separada */}
-            <div className="mt-6">
+            {/* Paginação */}
+            <div className="mt-6 mb-8">
               {console.log("Estado atual do meta:", meta)} {/* Debug */}
               {meta.lastPage > 1 && (
                 <div className="flex flex-col items-center gap-4">

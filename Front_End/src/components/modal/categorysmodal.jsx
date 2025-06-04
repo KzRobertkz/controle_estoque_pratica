@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
+import { FiX, FiEdit2, FiTrash2, FiPlus, FiLoader } from 'react-icons/fi';
 import axios from 'axios';
 
 export const ManageCategorysModal = ({ 
@@ -141,15 +141,15 @@ export const ManageCategorysModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg w-[600px] max-h-[80vh] overflow-y-auto scrollbar-hide">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center">
             <FiPlus className="mr-2" />
             Gerenciar Categorias
           </h2>
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-gray-500 p-0 bg-white hover:text-gray-700 transition-colors focus:outline-none"
           >
-            <FiX size={20} />
+            <FiX size={28} />
           </button>
         </div>
 
@@ -166,38 +166,41 @@ export const ManageCategorysModal = ({
         )}
 
         {isLoading ? (
-          <div className="text-center py-4">Carregando categorias...</div>
+          <div className="flex flex-col items-center justify-center py-8">
+            <FiLoader className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+            <p className="text-gray-600 text-lg">Carregando categorias...</p>
+          </div>
         ) : (
           <>
             <div className="space-y-4 mb-4">
               {getCurrentPageItems().map(category => (
-                <div key={category.id} className="border rounded-lg p-4">
+                <div key={category.id} className="border border-gray-300 rounded-lg p-4">
                   {editingCategory?.id === category.id ? (
                     <div className="space-y-3">
                       <input
                         type="text"
                         value={editForm.name}
                         onChange={e => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 rounded bg-cinza-escuro focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         placeholder="Nome da categoria"
                       />
                       <textarea
                         value={editForm.description}
                         onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 rounded bg-cinza-escuro focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         placeholder="Descrição (opcional)"
                         rows={2}
                       />
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={handleCancelEdit}
-                          className="px-3 py-1 text-gray-600 hover:text-gray-800"
+                          className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none"
                         >
                           Cancelar
                         </button>
                         <button
                           onClick={() => handleUpdate(category.id)}
-                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none" 
                         >
                           Salvar
                         </button>
@@ -207,25 +210,25 @@ export const ManageCategorysModal = ({
                     <div>
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-semibold text-lg">{category.name}</h3>
+                          <h3 className="font-semibold text-xl text-zinc-700">{category.name}</h3>
                           {category.description && (
-                            <p className="text-gray-600 mt-1">{category.description}</p>
+                            <p className="text-gray-700 text-lg mt-1">{category.description}</p>
                           )}
                         </div>
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleStartEdit(category)}
-                            className="p-2 text-gray-600 hover:text-blue-600"
+                            className="p-0 bg-white text-gray-600 hover:text-blue-600 focus:outline-none"
                             title="Editar"
                           >
-                            <FiEdit2 />
+                            <FiEdit2 className='text-2xl'/>
                           </button>
                           <button
                             onClick={() => handleDelete(category.id)}
-                            className="p-2 text-gray-600 hover:text-red-600"
+                            className="p-0 bg-white text-gray-600 hover:text-red-600 focus:outline-none"
                             title="Excluir"
                           >
-                            <FiTrash2 />
+                            <FiTrash2 className='text-2xl'/>
                           </button>
                         </div>
                       </div>
@@ -241,7 +244,7 @@ export const ManageCategorysModal = ({
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded ${
+                  className={`px-3 py-1 rounded focus:outline-none ${
                     currentPage === 1
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -254,7 +257,7 @@ export const ManageCategorysModal = ({
                   <button
                     key={number}
                     onClick={() => handlePageChange(number)}
-                    className={`px-3 py-1 rounded ${
+                    className={`px-3 py-1 rounded focus:outline-none ${
                       currentPage === number
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -267,7 +270,7 @@ export const ManageCategorysModal = ({
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded ${
+                  className={`px-3 py-1 rounded focus:outline-none ${
                     currentPage === totalPages
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
