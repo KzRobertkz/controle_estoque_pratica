@@ -1,4 +1,4 @@
-// app/controllers/products_controller.js
+
 import type { HttpContext } from '@adonisjs/core/http'
 import Product from '#models/product'
 
@@ -16,6 +16,7 @@ export default class ProductsController {
       }
 
       query.orderBy('created_at', 'desc') 
+      query.preload('category')
 
       const products = await query.paginate(page, limit)
 
@@ -30,35 +31,23 @@ export default class ProductsController {
 
   
   async store({ request, response }: HttpContext) {
-    try {
-      // Log request body for debugging
-      console.log('\nDados do produto:', request.body())
-      
-      // Get data from request
-      const data = request.only(['name', 'description', 'price', 'stock'])
-      
-      // Validate that required fields exist
-      if (!data.name || !data.price || data.stock === undefined) {
-        return response.badRequest({ 
-          message: 'Campos nome, preço e estoque são obrigatórios'
-        })
-      }
-      
-      // Ensure price and stock are numbers
-      data.price = Number(data.price)
-      data.stock = Number(data.stock)
-      
-      // Create product
-      const product = await Product.create(data)
-      
-      return response.created(product)
-    } catch (error) {
-      console.error('Erro ao criar o produto:', error)
-      return response.internalServerError({ 
-        message: 'Erro ao criar produto', 
-        error: error.message 
-      })
+    const data = request.only(['name', 'description', 'price', 'stock', 'category_id'])
+    
+    // Converter category_id para categoryId (camelCase usado pelo Lucid)
+    const productData = {
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      stock: data.stock,
+      categoryId: data.category_id || null
     }
+
+    const product = await Product.create(productData)
+    
+    // Fazer preload da categoria antes de retornar
+    await product.load('category')
+    
+    return response.json(product)
   }
 
   async destroy({ request, response }: HttpContext) {
@@ -90,34 +79,27 @@ export default class ProductsController {
     }
   }
 
-  async update({ request, response }: HttpContext) {
-    try {
-      const productId = request.param('id')
-      const data = request.only(['name', 'description', 'price', 'stock'])
-
-      if (!productId) {
-        return response.badRequest({ message: 'ID do produto não fornecido' })
-      }
-
-      const product = await Product.find(productId)
-      if (!product) {
-        return response.notFound({ message: 'Produto não encontrado' })
-      }
-
-      product.name = data.name ?? product.name
-      product.description = data.description ?? product.description
-      product.price = data.price !== undefined ? Number(data.price) : product.price
-      product.stock = data.stock !== undefined ? Number(data.stock) : product.stock
-
-      await product.save()
-
-      return response.ok(product)
-    } catch (error) {
-      console.error('Erro ao atualizar produto:', error)
-      return response.internalServerError({ message: 'Erro ao atualizar produto', error: error.message })
+  async update({ params, request, response }: HttpContext) {
+    const product = await Product.findOrFail(params.id)
+    const data = request.only(['name', 'description', 'price', 'stock', 'category_id'])
+    
+    // Converter category_id para categoryId
+    const updateData = {
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      stock: data.stock,
+      categoryId: data.category_id || null
     }
-  }
 
+    product.merge(updateData)
+    await product.save()
+    
+    // Fazer preload da categoria antes de retornar
+    await product.load('category')
+    
+    return response.json(product)
+  }
 
   // Outras funções
   public async getRecent({ response }: HttpContext) {

@@ -1,7 +1,7 @@
-import React from 'react';
+
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-export const DetailsModal = ({ isOpen, onClose, produto }) => {
+export const DetailsModal = ({ isOpen, onClose, produto, getCategoryName }) => {
   if (!isOpen || !produto) return null;
 
   // Função para obter o nome do mês em português
@@ -93,7 +93,12 @@ export const DetailsModal = ({ isOpen, onClose, produto }) => {
               </h3>
               <div className="space-y-2">
                 <p className="text-stone-600"><span className="font-medium">Código:</span> #{produto.id}</p>
-                <p className="text-stone-600"><span className="font-medium">Categoria:</span> {produto.category}</p>
+                <p className="text-stone-600">
+                  <span className="font-medium">Categoria:</span> 
+                  <span className="ml-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
+                    {getCategoryName ? getCategoryName(produto) : (produto.category || 'Sem categoria')}
+                  </span>
+                </p>
                 <p className="text-stone-600"><span className="font-medium">Preço Atual:</span> {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.price)}</p>
                 <p className="text-stone-600"><span className="font-medium">Estoque Atual:</span> {produto.stock} unidades</p>
               </div>

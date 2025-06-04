@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { useSearchParams } from 'react-router-dom'
 import Header from "../components/Header/header"
@@ -6,9 +6,13 @@ import { Sidebar } from "../components/Sidebar/sidebar"
 import { MdOutlineInventory2 } from "react-icons/md"
 import { EditModal } from '../components/modal/editmodal';
 import { DetailsModal } from '../components/modal/detailsmodal';
+import { CreateCategoryModal } from '../components/modal/newcategorymodal';
+import { FilterModal } from '../components/modal/filtermodal';
+import { FaFilter } from "react-icons/fa";
 
 export const Produtos = () => {
-  const [allProdutos, setAllProdutos] = useState([]); // Todos os produtos carregados
+  const [allProdutos, setAllProdutos] = useState([]);
+  const [categories, setCategories] = useState([]); 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -20,6 +24,23 @@ export const Produtos = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Estados para modal de categoria
+  const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryDescription, setCategoryDescription] = useState('');
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
+
+  // Estados para modal de filtros
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    category: '',
+    minPrice: '',
+    maxPrice: '',
+    minStock: '',
+    maxStock: '',
+    id: ''
+  });
+
   const itemsPerPage = 20;
 
   // API instance
@@ -28,7 +49,6 @@ export const Produtos = () => {
     withCredentials: true,
   });
 
-  // Interceptor para adicionar token
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -37,18 +57,183 @@ export const Produtos = () => {
     return config;
   });
 
-  // Filtrar produtos baseado na busca
-  const filteredProdutos = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return allProdutos;
+  // Função para buscar categorias
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get("/categories");
+      const categoriesData = response.data.data || response.data || [];
+      setCategories(categoriesData);
+      console.log('Categorias carregadas:', categoriesData);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+      setCategories([]);
+    }
+  };
+
+  // Função para criar nova categoria
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    
+    if (!categoryName.trim()) {
+      setError('Nome da categoria é obrigatório');
+      return;
     }
 
-    return allProdutos.filter(produto => 
-      produto.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      produto.id.toString().includes(searchQuery) ||
-      (produto.category && produto.category.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [allProdutos, searchQuery]);
+    setIsSubmittingCategory(true);
+    setError(''); // Limpar erros anteriores
+    
+    try {
+      const categoryData = {
+        name: categoryName.trim(),
+        description: categoryDescription.trim() || null
+      };
+
+      console.log('Enviando dados da categoria:', categoryData);
+
+      const response = await api.post("/categories", categoryData);
+      
+      console.log('Resposta da API:', response.data);
+      
+      // Extrair os dados da categoria da resposta
+      // O controller retorna os dados diretamente ou em response.data.data
+      const newCategory = response.data.data || response.data;
+      
+      // Adicionar nova categoria à lista
+      setCategories(prev => [...prev, newCategory]);
+      
+      // Fechar modal e limpar dados
+      setIsCreateCategoryModalOpen(false);
+      setCategoryName('');
+      setCategoryDescription('');
+      
+      setSuccessMessage('Categoria criada com sucesso!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+    } catch (error) {
+      console.error('Erro ao criar categoria:', error);
+      
+      let errorMessage = 'Erro ao criar categoria.';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Você precisa estar logado para criar categorias.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.message || 'Dados inválidos fornecidos.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setIsSubmittingCategory(false);
+    }
+  };
+
+  // Função para obter nome da categoria (melhorada)
+  const getCategoryName = (produto) => {
+    // Tentar diferentes formas de acessar a categoria
+    let categoryId = null;
+    let categoryName = null;
+
+    // Primeiro, verificar se já tem o nome da categoria no produto
+    if (produto.category && typeof produto.category === 'string') {
+      return produto.category;
+    }
+
+    // Se a categoria é um objeto, pegar o nome dele
+    if (produto.category && typeof produto.category === 'object' && produto.category.name) {
+      return produto.category.name;
+    }
+
+    // Tentar pegar o ID da categoria de diferentes propriedades
+    categoryId = produto.category_id || produto.categoryId || (produto.category && produto.category.id);
+
+    if (!categoryId) {
+      return 'Sem categoria';
+    }
+
+    // Procurar a categoria na lista de categorias
+    const category = categories.find(cat => cat && cat.id === categoryId);
+    return category ? category.name : 'Categoria não encontrada';
+  };
+
+  // Função para obter ID da categoria (melhorada)
+  const getCategoryId = (produto) => {
+    // Se a categoria é um objeto, pegar o ID dele
+    if (produto.category && typeof produto.category === 'object' && produto.category.id) {
+      return produto.category.id;
+    }
+
+    // Tentar pegar o ID da categoria de diferentes propriedades
+    return produto.category_id || produto.categoryId || null;
+  };
+
+  // Aplicar filtros aos produtos (melhorado)
+  const applyFiltersToProducts = (products, appliedFilters) => {
+    return products.filter(produto => {
+      // Filtro por ID
+      if (appliedFilters.id && !produto.id.toString().includes(appliedFilters.id)) {
+        return false;
+      }
+      
+      // Filtro por categoria (melhorado)
+      if (appliedFilters.category) {
+        const filterCategoryId = parseInt(appliedFilters.category);
+        const produtoCategoryId = getCategoryId(produto);
+        
+        if (!produtoCategoryId || produtoCategoryId !== filterCategoryId) {
+          return false;
+        }
+      }
+      
+      // Filtro por preço mínimo
+      if (appliedFilters.minPrice && parseFloat(produto.price) < parseFloat(appliedFilters.minPrice)) {
+        return false;
+      }
+      
+      // Filtro por preço máximo
+      if (appliedFilters.maxPrice && parseFloat(produto.price) > parseFloat(appliedFilters.maxPrice)) {
+        return false;
+      }
+      
+      // Filtro por estoque mínimo
+      if (appliedFilters.minStock && parseInt(produto.stock) < parseInt(appliedFilters.minStock)) {
+        return false;
+      }
+      
+      // Filtro por estoque máximo
+      if (appliedFilters.maxStock && parseInt(produto.stock) > parseInt(appliedFilters.maxStock)) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
+
+  // Filtrar produtos baseado na busca e filtros (melhorado)
+  const filteredProdutos = useMemo(() => {
+    let filtered = allProdutos;
+
+    // Aplicar busca por texto (melhorado)
+    if (searchQuery.trim()) {
+      const searchTerm = searchQuery.toLowerCase();
+      filtered = filtered.filter(produto => {
+        const name = produto.name ? produto.name.toLowerCase() : '';
+        const id = produto.id ? produto.id.toString() : '';
+        const categoryName = getCategoryName(produto).toLowerCase();
+        
+        return name.includes(searchTerm) || 
+               id.includes(searchTerm) || 
+               categoryName.includes(searchTerm);
+      });
+    }
+
+    // Aplicar filtros
+    filtered = applyFiltersToProducts(filtered, filters);
+
+    return filtered;
+  }, [allProdutos, searchQuery, filters, categories]);
 
   // Calcular produtos da página atual
   const paginatedProdutos = useMemo(() => {
@@ -118,6 +303,7 @@ export const Produtos = () => {
       setAllProdutos(sortedData);
       setError("");
       console.log(`Total de produtos carregados: ${sortedData.length}`);
+      console.log('Exemplo de produto:', sortedData[0]); // Para debug
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
       if (error.response && error.response.status === 401) {
@@ -147,9 +333,15 @@ export const Produtos = () => {
     setSearchParams(newParams, { replace: true });
   };
 
-  // Inicialização - carrega todos os produtos uma única vez
+  // Inicialização - carrega todos os produtos e categorias
   useEffect(() => {
-    fetchAllProdutos();
+    const loadData = async () => {
+      // Carregar categorias primeiro, depois produtos
+      await fetchCategories();
+      await fetchAllProdutos();
+    };
+    
+    loadData();
     
     // Recuperar estado da URL
     const searchFromParams = searchParams.get("search") || "";
@@ -159,10 +351,10 @@ export const Produtos = () => {
     setCurrentPage(pageFromParams);
   }, []);
 
-  // Quando a busca muda, resetar para página 1
+  // Quando a busca ou filtros mudam, resetar para página 1
   useEffect(() => {
     setCurrentPage(1);
-    
+  
     // Atualizar URL
     const newParams = new URLSearchParams(searchParams);
     newParams.set("page", "1");
@@ -172,7 +364,7 @@ export const Produtos = () => {
       newParams.delete("search");
     }
     setSearchParams(newParams, { replace: true });
-  }, [searchQuery]);
+  }, [searchQuery, filters]);
 
   // Scroll para o topo quando mudar de página
   useEffect(() => {
@@ -228,7 +420,15 @@ export const Produtos = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.put(`/products/${editingProduct.id}`, editingProduct);
+      // Preparar os dados para envio, garantindo que category_id seja enviado
+      const productData = {
+        ...editingProduct,
+        category_id: editingProduct.category_id || editingProduct.categoryId,
+        price: parseFloat(editingProduct.price),
+        stock: parseInt(editingProduct.stock)
+      };
+
+      const response = await api.put(`/products/${editingProduct.id}`, productData);
       
       // Atualizar produto na lista local
       setAllProdutos(prevProdutos => 
@@ -256,6 +456,26 @@ export const Produtos = () => {
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
+
+  // Funções para o modal de filtros
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    const emptyFilters = {
+      category: '',
+      minPrice: '',
+      maxPrice: '',
+      minStock: '',
+      maxStock: '',
+      id: ''
+    };
+    setFilters(emptyFilters);
+  };
+
+  // Verificar se há filtros ativos
+  const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
   if (isLoading) {
     return (
@@ -289,9 +509,25 @@ export const Produtos = () => {
               <div className='flex items-center gap-4'>
                 <div className='text-sm text-stone-500'>
                   Total: {allProdutos.length} produtos
+                  {hasActiveFilters && ` | Filtrados: ${filteredProdutos.length}`}
                 </div>
-                <button className="px-4 py-2 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none">
+                <button 
+                  onClick={() => setIsCreateCategoryModalOpen(true)}
+                  className="px-4 py-2 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none"
+                >
                   Nova Categoria
+                </button>
+                <button 
+                  onClick={() => setIsFilterModalOpen(true)}
+                  className={`flex gap-2 px-4 py-2 rounded transition-colors duration-200 focus:outline-none ${
+                    hasActiveFilters 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-zinc-700 text-white hover:bg-zinc-500'
+                  }`}
+                >
+                  Filtrar
+                  <FaFilter className='text-base mt-1'/>
+                  {hasActiveFilters && <span className="bg-white text-blue-600 rounded-full px-2 py-0.5 text-xs font-bold">!</span>}
                 </button>
               </div>
             </div>
@@ -302,6 +538,12 @@ export const Produtos = () => {
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 {error}
+                <button 
+                  onClick={() => setError('')}
+                  className="float-right text-red-500 hover:text-red-700 font-bold"
+                >
+                  ×
+                </button>
               </div>
             )}
 
@@ -320,10 +562,34 @@ export const Produtos = () => {
                 onChange={handleSearchChange}
                 className="w-full p-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              {searchQuery && (
-                <p className="text-sm text-stone-500 mt-2">
-                  Mostrando {filteredProdutos.length} resultado{filteredProdutos.length !== 1 ? 's' : ''} para "{searchQuery}"
-                </p>
+              {(searchQuery || hasActiveFilters) && (
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-sm text-stone-500">
+                    Mostrando {filteredProdutos.length} resultado{filteredProdutos.length !== 1 ? 's' : ''}
+                    {searchQuery && ` para "${searchQuery}"`}
+                    {hasActiveFilters && " (com filtros aplicados)"}
+                  </p>
+                  {(searchQuery || hasActiveFilters) && (
+                    <div className="flex gap-2">
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 focus:outline-none"
+                        >
+                          Limpar Busca
+                        </button>
+                      )}
+                      {hasActiveFilters && (
+                        <button
+                          onClick={handleClearFilters}
+                          className="px-3 py-1 bg-blue-200 text-blue-700 text-sm rounded hover:bg-blue-300 focus:outline-none"
+                        >
+                          Limpar Filtros
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
@@ -339,7 +605,9 @@ export const Produtos = () => {
                       <h4 className="text-lg font-semibold text-stone-700">{produto.name}</h4>
                       <p className="text-stone-600">Código: #{produto.id}</p>
                       <p className="text-stone-600">Quantidade: {produto.stock}</p>
-                      <p className="text-stone-600">Categoria: {produto.category || 'Sem categoria'}</p>
+                      <p className="text-stone-600">
+                        Categoria: <span className="font-medium text-blue-600">{getCategoryName(produto)}</span>
+                      </p>
                       <p className="text-lg font-medium text-stone-700">{formatarPreco(produto.price)}</p>
                       <div className="mt-4 flex justify-end gap-2">
                         <button 
@@ -367,19 +635,31 @@ export const Produtos = () => {
               ) : (
                 <div className="col-span-full flex flex-col items-center justify-center py-12">
                   <p className="text-lg text-stone-500 mb-4">
-                    {searchQuery.trim() !== "" 
-                      ? `Nenhum produto encontrado para "${searchQuery}"` 
+                    {searchQuery.trim() !== "" || hasActiveFilters
+                      ? "Nenhum produto encontrado com os critérios especificados" 
                       : "Nenhum produto encontrado"
                     }
                   </p>
                   
-                  {searchQuery.trim() !== "" && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none"
-                    >
-                      Limpar Busca
-                    </button>
+                  {(searchQuery.trim() !== "" || hasActiveFilters) && (
+                    <div className="flex gap-2">
+                      {searchQuery.trim() !== "" && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none"
+                        >
+                          Limpar Busca
+                        </button>
+                      )}
+                      {hasActiveFilters && (
+                        <button
+                          onClick={handleClearFilters}
+                          className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 focus:outline-none"
+                        >
+                          Limpar Filtros
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -450,11 +730,11 @@ export const Produtos = () => {
                   <div className="text-center text-sm text-stone-600">
                     {(() => {
                       const { start, end } = calculateItemRange();
-                      const hasSearch = searchQuery.trim() !== "";
+                      const hasFilters = searchQuery.trim() !== "" || hasActiveFilters;
                       
                       if (meta.total === 0) {
-                        return hasSearch 
-                          ? `Nenhum resultado encontrado para "${searchQuery}"` 
+                        return hasFilters 
+                          ? "Nenhum resultado encontrado com os critérios especificados" 
                           : "Nenhum produto cadastrado";
                       }
                       
@@ -465,7 +745,7 @@ export const Produtos = () => {
                           </div>
                           <div>
                             Mostrando {start} - {end} de {meta.total} {meta.total === 1 ? 'produto' : 'produtos'}
-                            {hasSearch && ` encontrado${meta.total !== 1 ? 's' : ''}`}
+                            {hasFilters && ` encontrado${meta.total !== 1 ? 's' : ''}`}
                           </div>
                         </>
                       );
@@ -478,11 +758,11 @@ export const Produtos = () => {
               {meta.lastPage === 1 && meta.total > 0 && (
                 <div className="text-center text-sm text-stone-600 mt-4">
                   {(() => {
-                    const hasSearch = searchQuery.trim() !== "";
+                    const hasFilters = searchQuery.trim() !== "" || hasActiveFilters;
                     return (
                       <div>
                         Mostrando {meta.total === 1 ? '1 produto' : `todos os ${meta.total} produtos`}
-                        {hasSearch && ` encontrado${meta.total !== 1 ? 's' : ''}`}
+                        {hasFilters && ` encontrado${meta.total !== 1 ? 's' : ''}`}
                       </div>
                     );
                   })()}
@@ -493,6 +773,7 @@ export const Produtos = () => {
         </div>
       </div>
       
+      {/* Modais existentes */}
       <EditModal 
         isOpen={isEditModalOpen}
         onClose={() => {
@@ -502,7 +783,10 @@ export const Produtos = () => {
         produto={editingProduct}
         onSave={handleUpdate}
         onChange={setEditingProduct}
+        categories={categories}
+        getCategoryId={getCategoryId}
       />
+      
       <DetailsModal 
         isOpen={isDetailsModalOpen}
         onClose={() => {
@@ -510,6 +794,30 @@ export const Produtos = () => {
           setSelectedProduct(null);
         }}
         produto={selectedProduct}
+        getCategoryName={getCategoryName}
+      />
+
+      {/* Modal para criar categoria */}
+      <CreateCategoryModal
+        isOpen={isCreateCategoryModalOpen}
+        onClose={() => setIsCreateCategoryModalOpen(false)}
+        categoryName={categoryName}
+        setCategoryName={setCategoryName}
+        categoryDescription={categoryDescription}
+        setCategoryDescription={setCategoryDescription}
+        onSubmit={handleCreateCategory}
+        isSubmitting={isSubmittingCategory}
+      />
+
+      {/* Modal de filtros */}
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        filters={filters}
+        setFilters={setFilters}
+        categories={categories}
+        onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
       />
     </div>
   );
