@@ -515,7 +515,7 @@ export const Produtos = () => {
                 </h3>
               </div>
 
-              <div className='flex items-center gap-4'>
+              <div className='flex items-center gap-4 ml-96 pl-40'>
                 <div className='text-sm text-stone-500'>
                   Total: {allProdutos.length} produtos
                   {hasActiveFilters && ` | Filtrados: ${filteredProdutos.length}`}
@@ -614,7 +614,7 @@ export const Produtos = () => {
                 paginatedProdutos.map((produto) => (
                   <div 
                     key={produto.id}
-                    className="bg-white p-6 rounded-lg border border-stone-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+                    className="bg-white p-6 rounded-lg border border-stone-300 shadow-sm hover:shadow-lg transition-shadow duration-200"
                   >
                     <div className="flex flex-col gap-2">
                       <h4 className="text-lg font-semibold text-stone-700">{produto.name}</h4>

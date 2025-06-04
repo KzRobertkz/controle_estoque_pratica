@@ -52,10 +52,10 @@ export const CreateCategoryModal = ({
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-gray-500 bg-white p-0 hover:text-gray-700 transition-colors focus:outline-none"
             disabled={isSubmitting}
           >
-            <FiX size={20} />
+            <FiX size={28} />
           </button>
         </div>
         
@@ -75,7 +75,7 @@ export const CreateCategoryModal = ({
               type="text"
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 bg-cinza-escuro border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Ex: Eletrônicos, Roupas, Livros..."
               required
               disabled={isSubmitting}
@@ -91,13 +91,13 @@ export const CreateCategoryModal = ({
             <textarea
               value={categoryDescription}
               onChange={(e) => setCategoryDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 bg-cinza-escuro border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Descreva brevemente esta categoria..."
               rows={3}
               disabled={isSubmitting}
               maxLength={500}
             />
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-gray-600 mt-1">
               {categoryDescription.length}/500 caracteres
             </div>
           </div>
