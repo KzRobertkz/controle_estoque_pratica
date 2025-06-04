@@ -87,11 +87,11 @@ export const FilterModal = ({
             <select
               value={localFilters.category}
               onChange={(e) => setLocalFilters({...localFilters, category: e.target.value})}
-              className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 text-gray-400 block w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Todas as categorias</option>
+              <option className='font-medium' value="">Todas as categorias</option>
               {categories.map((category) => (
-                <option key={category.id} value={category.id}>
+                <option className='font-medium' key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}

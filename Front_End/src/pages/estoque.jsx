@@ -2,15 +2,49 @@ import { useEffect, useState } from "react";
 import axios from 'axios';
 import Header from "../components/Header/header";
 import { Sidebar } from "../components/Sidebar/sidebar";
+import { ChooseCategoryModal } from "../components/modal/choosecategorymodal";
 
 import { useSearchParams } from "react-router-dom";
 
 function Estoque() {
 
+  // Estados para modal de escolher a categoria
+  const [isChooseCategoryModalOpen, setIsChooseCategoryModalOpen] = useState(false);
+  const [categories, setCategories] = useState([]); // Lista de categorias
+  const [selectedCategoryId, setSelectedCategoryId] = useState(""); // Categoria selecionada
+
   const api = axios.create({
     baseURL: "http://localhost:3333",
     withCredentials: true,
   });
+
+  // Função para buscar as categorias
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get("/categories");
+      setCategories(response.data.data || response.data || []);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+      setCategories([]);
+    }
+  };
+
+  // Carregar categorias ao montar o componente
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const applyFiltersToProducts = (products, appliedFilters) => {
+    return products.filter(produto => {
+      
+      // Filtro por categoria
+      if (appliedFilters.category && produto.category_id !== parseInt(appliedFilters.category)) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
 
   // Mecanicas dos Produtos
   const [products, setProducts] = useState([]);
@@ -19,6 +53,7 @@ function Estoque() {
     description: "",
     price: "",
     stock: "",
+    category_id: ""
   });
   const [editingProductId, setEditingProductId] = useState(null);
 
@@ -72,8 +107,17 @@ function Estoque() {
         params: { page: pageNumber, search: query },
       });
       
+      console.log("Resposta completa da API:", res.data);
+      
       const data = Array.isArray(res.data.data) ? res.data.data : [];
       const metaData = res.data.meta || {};
+      
+      // Debug: Verificar se os produtos têm category_id
+      console.log("Produtos recebidos:", data.map(p => ({
+        id: p.id,
+        name: p.name,
+        category_id: p.category_id
+      })));
       
       // Ordena os produtos por ID em ordem decrescente
       const sortedData = [...data].sort((a, b) => b.id - a.id);
@@ -123,22 +167,83 @@ function Estoque() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [searchParams]);
 
+  // Função para lidar com a seleção de categoria
+  const handleCategorySelect = (categoryId) => {
+    const categoryIdString = categoryId.toString();
+    console.log("Categoria selecionada:", categoryIdString);
+    
+    // Atualizar ambos os estados de forma consistente
+    setSelectedCategoryId(categoryIdString);
+    setNewProduct(prev => ({ 
+      ...prev, 
+      category_id: categoryIdString 
+    }));
+    
+    console.log("Estados após seleção:", {
+      selectedCategoryId: categoryIdString,
+      newProduct_category_id: categoryIdString
+    });
+  };
+
+  // Função para obter o nome da categoria
+  const getCategoryName = (categoryId) => {
+    console.log("getCategoryName chamada com:", categoryId); // Debug
+    
+    if (!categoryId) {
+      console.log("getCategoryName: categoryId vazio ou null");
+      return "";
+    }
+    
+    const category = categories.find(cat => cat.id === parseInt(categoryId));
+    const categoryName = category ? category.name : "";
+    
+    console.log("getCategoryName resultado:", {
+      categoryId: categoryId,
+      parsed: parseInt(categoryId),
+      found: category,
+      name: categoryName
+    }); // Debug
+    
+    return categoryName;
+  };
+
   const handleAddProduct = async (e) => {
     e.preventDefault();
+    
+    // Debug: Verificar os dados antes de enviar
+    console.log("Dados do produto antes de enviar:", {
+      name: newProduct.name,
+      description: newProduct.description,
+      price: newProduct.price,
+      stock: newProduct.stock,
+      category_id: newProduct.category_id,
+      selectedCategoryId: selectedCategoryId
+    });
+    
     try {
+      // CORREÇÃO IMPORTANTE: Priorizar selectedCategoryId sobre newProduct.category_id
+      const categoryIdToUse = selectedCategoryId || newProduct.category_id;
+      
       const productData = {
         name: newProduct.name,
         description: newProduct.description,
         price: Number(newProduct.price),
-        stock: Number(newProduct.stock)
+        stock: Number(newProduct.stock),
+        category_id: categoryIdToUse ? Number(categoryIdToUse) : null
       };
+
+      // Debug: Verificar os dados finais que serão enviados
+      console.log("Dados finais sendo enviados para a API:", productData);
 
       if (editingProductId) {
         const res = await api.put(`/products/${editingProductId}`, productData);
+        console.log("Resposta da API ao atualizar produto:", res.data);
         setProducts(products.map(p => (p.id === editingProductId ? res.data : p)));
         setSuccessMessage("Produto atualizado com sucesso!");
       } else {
-        await api.post('/products', productData);
+        const res = await api.post('/products', productData);
+        console.log("Resposta da API ao criar produto:", res.data);
+        
         // Recarregar a primeira página após adicionar um produto
         const newParams = new URLSearchParams(searchParams);
         newParams.set("page", "1");
@@ -147,30 +252,69 @@ function Estoque() {
         setSuccessMessage("Produto adicionado com sucesso!");
       }
 
-      setNewProduct({ name: '', description: '', price: '', stock: '' });
+      // Limpar formulário
+      setNewProduct({ name: '', description: '', price: '', stock: '', category_id: '' });
+      setSelectedCategoryId("");
       setEditingProductId(null);
       setTimeout(() => setSuccessMessage(''), 3000);
       setError('');
     } catch (err) {
       console.error("Erro ao salvar produto:", err);
+      console.error("Resposta do erro:", err.response?.data);
       setError('Erro ao salvar produto. Verifique os dados e tente novamente.');
     }
   };
 
   const handleEditProduct = (product) => {
+  console.log("Editando produto:", product); // Debug
+    
+    // CORREÇÃO: Buscar o category_id da estrutura correta
+    // O produto pode ter: product.categoryId, product.category_id, ou product.category.id
+    let categoryId = "";
+    
+    if (product.categoryId) {
+      categoryId = product.categoryId.toString();
+    } else if (product.category_id) {
+      categoryId = product.category_id.toString();
+    } else if (product.category && product.category.id) {
+      categoryId = product.category.id.toString();
+    }
+    
+    console.log("Categoria do produto:", {
+      original_categoryId: product.categoryId,
+      original_category_id: product.category_id,
+      original_category: product.category,
+      converted_categoryId: categoryId,
+      categoryName: getCategoryName(categoryId)
+    }); // Debug detalhado
+    
     setNewProduct({
       name: product.name,
       description: product.description,
       price: product.price,
-      stock: product.stock
+      stock: product.stock,
+      category_id: categoryId
     });
+    
+    // Definir selectedCategoryId
+    setSelectedCategoryId(categoryId);
+    
+    console.log("Estados sendo definidos:", {
+      selectedCategoryId: categoryId,
+      newProduct_category_id: categoryId,
+      editingProductId: product.id
+    }); // Debug
+    
     setEditingProductId(product.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Função para cancelar edição - CORRIGIDA
   const handleCancelEdit = () => {
-    setNewProduct({ name: '', description: '', price: '', stock: '' });
+    setNewProduct({ name: '', description: '', price: '', stock: '', category_id: '' });
+    setSelectedCategoryId("");
     setEditingProductId(null);
+    console.log("Edição cancelada, estado limpo"); // Debug
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -295,7 +439,7 @@ function Estoque() {
                     />
                     <input
                       type="number"
-                      placeholder="Estoque"l
+                      placeholder="Estoque"
                       value={newProduct.stock}
                       onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
                       className="p-3 rounded-lg text-lg text-white bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
@@ -303,7 +447,16 @@ function Estoque() {
                     />
                   </div>
 
-                  <div className="flex gap-4">
+                  {/* Categoria selecionada */}
+                  {selectedCategoryId && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-blue-800">
+                        <strong>Categoria selecionada:</strong> {getCategoryName(selectedCategoryId)}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-4 flex-wrap">
                     <button
                       type="submit"
                       className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition focus:outline-none"
@@ -311,9 +464,25 @@ function Estoque() {
                       {editingProductId ? "Atualizar Produto" : "Adicionar Produto"}
                     </button>
 
-                    <button className="px-4 py-2 ml-28 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none">
-                      Escolher Categoria
+                    <button 
+                      type="button"
+                      onClick={() => setIsChooseCategoryModalOpen(true)}
+                      className="px-4 py-2 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none">
+                        {selectedCategoryId ? "Alterar Categoria" : "Escolher Categoria"}
                     </button>
+
+                    {selectedCategoryId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategoryId("");
+                          setNewProduct({ ...newProduct, category_id: "" });
+                        }}
+                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition focus:outline-none"
+                      >
+                        Remover Categoria
+                      </button>
+                    )}
 
                     {editingProductId && (
                       <button
@@ -349,6 +518,11 @@ function Estoque() {
                           Preço: <span className="text-green-600 font-medium">R$ {Number(product.price).toFixed(2)}</span>
                         </p>
                         <p className="text-gray-800 text-lg">Estoque: {product.stock} unidades</p>
+                        {product.category_id && (
+                          <p className="text-gray-800 text-lg">
+                            Categoria: <span className="text-blue-600 font-medium">{getCategoryName(product.category_id)}</span>
+                          </p>
+                        )}
                       </div>
                       <div className="flex space-x-2">
                         <button
@@ -505,6 +679,15 @@ function Estoque() {
           </div>
         </div>
       </div>
+      
+      {/* Modal de escolher categoria */}
+      <ChooseCategoryModal
+        isOpen={isChooseCategoryModalOpen}
+        onClose={() => setIsChooseCategoryModalOpen(false)}
+        categories={categories}
+        onCategorySelect={handleCategorySelect}
+        selectedCategoryId={selectedCategoryId}
+      />
     </div>
   );
 }

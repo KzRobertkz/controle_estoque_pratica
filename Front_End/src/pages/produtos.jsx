@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { useSearchParams } from 'react-router-dom'
 import Header from "../components/Header/header"
@@ -11,8 +11,8 @@ import { FilterModal } from '../components/modal/filtermodal';
 import { FaFilter } from "react-icons/fa";
 
 export const Produtos = () => {
-  const [allProdutos, setAllProdutos] = useState([]); // Todos os produtos carregados
-  const [categories, setCategories] = useState([]); // Lista de categorias
+  const [allProdutos, setAllProdutos] = useState([]);
+  const [categories, setCategories] = useState([]); 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -49,7 +49,6 @@ export const Produtos = () => {
     withCredentials: true,
   });
 
-  // Interceptor para adicionar token
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -62,7 +61,9 @@ export const Produtos = () => {
   const fetchCategories = async () => {
     try {
       const response = await api.get("/categories");
-      setCategories(response.data.data || response.data || []);
+      const categoriesData = response.data.data || response.data || [];
+      setCategories(categoriesData);
+      console.log('Categorias carregadas:', categoriesData);
     } catch (error) {
       console.error('Erro ao buscar categorias:', error);
       setCategories([]);
@@ -79,37 +80,96 @@ export const Produtos = () => {
     }
 
     setIsSubmittingCategory(true);
+    setError(''); // Limpar erros anteriores
+    
     try {
       const categoryData = {
         name: categoryName.trim(),
         description: categoryDescription.trim() || null
       };
 
+      console.log('Enviando dados da categoria:', categoryData);
+
       const response = await api.post("/categories", categoryData);
       
-      // Adicionar nova categoria à lista
-      setCategories(prev => [...prev, response.data]);
+      console.log('Resposta da API:', response.data);
       
-      // Fechar modal e limpar estados
+      // Extrair os dados da categoria da resposta
+      // O controller retorna os dados diretamente ou em response.data.data
+      const newCategory = response.data.data || response.data;
+      
+      // Adicionar nova categoria à lista
+      setCategories(prev => [...prev, newCategory]);
+      
+      // Fechar modal e limpar dados
       setIsCreateCategoryModalOpen(false);
       setCategoryName('');
       setCategoryDescription('');
       
       setSuccessMessage('Categoria criada com sucesso!');
       setTimeout(() => setSuccessMessage(''), 3000);
+      
     } catch (error) {
       console.error('Erro ao criar categoria:', error);
+      
       let errorMessage = 'Erro ao criar categoria.';
+      
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Você precisa estar logado para criar categorias.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.message || 'Dados inválidos fornecidos.';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+      
       setError(errorMessage);
     } finally {
       setIsSubmittingCategory(false);
     }
   };
 
-  // Aplicar filtros aos produtos
+  // Função para obter nome da categoria (melhorada)
+  const getCategoryName = (produto) => {
+    // Tentar diferentes formas de acessar a categoria
+    let categoryId = null;
+    let categoryName = null;
+
+    // Primeiro, verificar se já tem o nome da categoria no produto
+    if (produto.category && typeof produto.category === 'string') {
+      return produto.category;
+    }
+
+    // Se a categoria é um objeto, pegar o nome dele
+    if (produto.category && typeof produto.category === 'object' && produto.category.name) {
+      return produto.category.name;
+    }
+
+    // Tentar pegar o ID da categoria de diferentes propriedades
+    categoryId = produto.category_id || produto.categoryId || (produto.category && produto.category.id);
+
+    if (!categoryId) {
+      return 'Sem categoria';
+    }
+
+    // Procurar a categoria na lista de categorias
+    const category = categories.find(cat => cat && cat.id === categoryId);
+    return category ? category.name : 'Categoria não encontrada';
+  };
+
+  // Função para obter ID da categoria (melhorada)
+  const getCategoryId = (produto) => {
+    // Se a categoria é um objeto, pegar o ID dele
+    if (produto.category && typeof produto.category === 'object' && produto.category.id) {
+      return produto.category.id;
+    }
+
+    // Tentar pegar o ID da categoria de diferentes propriedades
+    return produto.category_id || produto.categoryId || null;
+  };
+
+  // Aplicar filtros aos produtos (melhorado)
   const applyFiltersToProducts = (products, appliedFilters) => {
     return products.filter(produto => {
       // Filtro por ID
@@ -117,9 +177,14 @@ export const Produtos = () => {
         return false;
       }
       
-      // Filtro por categoria
-      if (appliedFilters.category && produto.category_id !== parseInt(appliedFilters.category)) {
-        return false;
+      // Filtro por categoria (melhorado)
+      if (appliedFilters.category) {
+        const filterCategoryId = parseInt(appliedFilters.category);
+        const produtoCategoryId = getCategoryId(produto);
+        
+        if (!produtoCategoryId || produtoCategoryId !== filterCategoryId) {
+          return false;
+        }
       }
       
       // Filtro por preço mínimo
@@ -146,24 +211,29 @@ export const Produtos = () => {
     });
   };
 
-  // Filtrar produtos baseado na busca e filtros
+  // Filtrar produtos baseado na busca e filtros (melhorado)
   const filteredProdutos = useMemo(() => {
     let filtered = allProdutos;
 
-    // Aplicar busca por texto
+    // Aplicar busca por texto (melhorado)
     if (searchQuery.trim()) {
-      filtered = filtered.filter(produto => 
-        produto.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        produto.id.toString().includes(searchQuery) ||
-        (produto.category && produto.category.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
+      const searchTerm = searchQuery.toLowerCase();
+      filtered = filtered.filter(produto => {
+        const name = produto.name ? produto.name.toLowerCase() : '';
+        const id = produto.id ? produto.id.toString() : '';
+        const categoryName = getCategoryName(produto).toLowerCase();
+        
+        return name.includes(searchTerm) || 
+               id.includes(searchTerm) || 
+               categoryName.includes(searchTerm);
+      });
     }
 
     // Aplicar filtros
     filtered = applyFiltersToProducts(filtered, filters);
 
     return filtered;
-  }, [allProdutos, searchQuery, filters]);
+  }, [allProdutos, searchQuery, filters, categories]);
 
   // Calcular produtos da página atual
   const paginatedProdutos = useMemo(() => {
@@ -233,6 +303,7 @@ export const Produtos = () => {
       setAllProdutos(sortedData);
       setError("");
       console.log(`Total de produtos carregados: ${sortedData.length}`);
+      console.log('Exemplo de produto:', sortedData[0]); // Para debug
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
       if (error.response && error.response.status === 401) {
@@ -264,7 +335,13 @@ export const Produtos = () => {
 
   // Inicialização - carrega todos os produtos e categorias
   useEffect(() => {
-    Promise.all([fetchAllProdutos(), fetchCategories()]);
+    const loadData = async () => {
+      // Carregar categorias primeiro, depois produtos
+      await fetchCategories();
+      await fetchAllProdutos();
+    };
+    
+    loadData();
     
     // Recuperar estado da URL
     const searchFromParams = searchParams.get("search") || "";
@@ -277,7 +354,7 @@ export const Produtos = () => {
   // Quando a busca ou filtros mudam, resetar para página 1
   useEffect(() => {
     setCurrentPage(1);
-    
+  
     // Atualizar URL
     const newParams = new URLSearchParams(searchParams);
     newParams.set("page", "1");
@@ -343,7 +420,15 @@ export const Produtos = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.put(`/products/${editingProduct.id}`, editingProduct);
+      // Preparar os dados para envio, garantindo que category_id seja enviado
+      const productData = {
+        ...editingProduct,
+        category_id: editingProduct.category_id || editingProduct.categoryId,
+        price: parseFloat(editingProduct.price),
+        stock: parseInt(editingProduct.stock)
+      };
+
+      const response = await api.put(`/products/${editingProduct.id}`, productData);
       
       // Atualizar produto na lista local
       setAllProdutos(prevProdutos => 
@@ -391,12 +476,6 @@ export const Produtos = () => {
 
   // Verificar se há filtros ativos
   const hasActiveFilters = Object.values(filters).some(value => value !== '');
-
-  // Função para obter nome da categoria
-  const getCategoryName = (categoryId) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : 'Sem categoria';
-  };
 
   if (isLoading) {
     return (
@@ -471,12 +550,6 @@ export const Produtos = () => {
             {successMessage && (
               <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
                 {successMessage}
-                <button 
-                  onClick={() => setSuccessMessage('')}
-                  className="float-right text-green-500 hover:text-green-700 font-bold"
-                >
-                  ×
-                </button>
               </div>
             )}
 
@@ -533,7 +606,7 @@ export const Produtos = () => {
                       <p className="text-stone-600">Código: #{produto.id}</p>
                       <p className="text-stone-600">Quantidade: {produto.stock}</p>
                       <p className="text-stone-600">
-                        Categoria: {getCategoryName(produto.category_id)}
+                        Categoria: <span className="font-medium text-blue-600">{getCategoryName(produto)}</span>
                       </p>
                       <p className="text-lg font-medium text-stone-700">{formatarPreco(produto.price)}</p>
                       <div className="mt-4 flex justify-end gap-2">
@@ -710,6 +783,8 @@ export const Produtos = () => {
         produto={editingProduct}
         onSave={handleUpdate}
         onChange={setEditingProduct}
+        categories={categories}
+        getCategoryId={getCategoryId}
       />
       
       <DetailsModal 
@@ -719,6 +794,7 @@ export const Produtos = () => {
           setSelectedProduct(null);
         }}
         produto={selectedProduct}
+        getCategoryName={getCategoryName}
       />
 
       {/* Modal para criar categoria */}

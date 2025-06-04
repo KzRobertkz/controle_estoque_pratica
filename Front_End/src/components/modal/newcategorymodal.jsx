@@ -7,6 +7,8 @@ export const CreateCategoryModal = ({
   onClose, 
   categoryName,
   setCategoryName,
+  categoryDescription,
+  setCategoryDescription,
   onSubmit,
   isSubmitting
 }) => {
@@ -16,9 +18,27 @@ export const CreateCategoryModal = ({
   useEffect(() => {
     if (!isOpen) {
       setCategoryName('');
+      setCategoryDescription('');
       setError('');
     }
-  }, [isOpen, setCategoryName,]);
+  }, [isOpen, setCategoryName, setCategoryDescription]);
+
+  // Função para lidar com o submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!categoryName.trim()) {
+      setError('Nome da categoria é obrigatório');
+      return;
+    }
+
+    try {
+      await onSubmit(e);
+    } catch (err) {
+      setError(err.message || 'Erro ao criar categoria');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -32,7 +52,7 @@ export const CreateCategoryModal = ({
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 transition-colors"
             disabled={isSubmitting}
           >
             <FiX size={20} />
@@ -45,41 +65,61 @@ export const CreateCategoryModal = ({
           </div>
         )}
         
-        <form onSubmit={onSubmit}>
-            {/* Nome da Categoria */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nome da Categoria
-              </label>
-              <input
-                type="text"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Digite o nome da categoria"
-                required
-                disabled={isSubmitting}
-              />
-            </div>
+        <form onSubmit={handleSubmit}>
+          {/* Nome da Categoria */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nome da Categoria *
+            </label>
+            <input
+              type="text"
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Ex: Eletrônicos, Roupas, Livros..."
+              required
+              disabled={isSubmitting}
+              maxLength={255}
+            />
+          </div>
 
-            {/* Botões */}
-            <div className="flex justify-end space-x-3 mt-6">
-                <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                disabled={isSubmitting}
-                >
-                Cancelar
-                </button>
-                <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isSubmitting}
-                >
-                {isSubmitting ? 'Criando...' : 'Criar Categoria'}
-                </button>
+          {/* Descrição da Categoria */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Descrição (Opcional)
+            </label>
+            <textarea
+              value={categoryDescription}
+              onChange={(e) => setCategoryDescription(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Descreva brevemente esta categoria..."
+              rows={3}
+              disabled={isSubmitting}
+              maxLength={500}
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              {categoryDescription.length}/500 caracteres
             </div>
+          </div>
+
+          {/* Botões */}
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              disabled={isSubmitting || !categoryName.trim()}
+            >
+              {isSubmitting ? 'Criando...' : 'Criar Categoria'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
