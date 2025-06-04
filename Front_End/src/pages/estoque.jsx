@@ -1,52 +1,24 @@
+// React e hooks
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+
+// Bibliotecas externas
 import axios from 'axios';
+
+// Componentes
 import Header from "../components/Header/header";
 import { Sidebar } from "../components/Sidebar/sidebar";
 import { ChooseCategoryModal } from "../components/modal/choosecategorymodal";
 
-import { useSearchParams } from "react-router-dom";
-
 function Estoque() {
-
-  // Estados para modal de escolher a categoria
-  const [isChooseCategoryModalOpen, setIsChooseCategoryModalOpen] = useState(false);
-  const [categories, setCategories] = useState([]); // Lista de categorias
-  const [selectedCategoryId, setSelectedCategoryId] = useState(""); // Categoria selecionada
-
-  const api = axios.create({
-    baseURL: "http://localhost:3333",
-    withCredentials: true,
-  });
-
-  // Função para buscar as categorias
-  const fetchCategories = async () => {
-    try {
-      const response = await api.get("/categories");
-      setCategories(response.data.data || response.data || []);
-    } catch (error) {
-      console.error('Erro ao buscar categorias:', error);
-      setCategories([]);
-    }
-  };
-
-  // Carregar categorias ao montar o componente
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const applyFiltersToProducts = (products, appliedFilters) => {
-    return products.filter(produto => {
-      
-      // Filtro por categoria
-      if (appliedFilters.category && produto.category_id !== parseInt(appliedFilters.category)) {
-        return false;
-      }
-      
-      return true;
-    });
-  };
-
-  // Mecanicas dos Produtos
+  // 1. ESTADOS
+  // Estados de UI
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Estados de Produtos
   const [products, setProducts] = useState([]);
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -56,18 +28,30 @@ function Estoque() {
     category_id: ""
   });
   const [editingProductId, setEditingProductId] = useState(null);
-
-  // Mecanicas de pesquisa
-  const [meta, setMeta] = useState({ currentPage: 1, lastPage: 1, total: 0, perPage: 10, firstPage: 1 });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  // Extraindo a página atual dos parâmetros da URL mais explicitamente
+  
+  // Estados de Categoria
+  const [isChooseCategoryModalOpen, setIsChooseCategoryModalOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  
+  // Estados de Paginação
+  const [meta, setMeta] = useState({ 
+    currentPage: 1, 
+    lastPage: 1, 
+    total: 0, 
+    perPage: 10, 
+    firstPage: 1 
+  });
   const pageParam = searchParams.get("page");
   const page = pageParam ? Number(pageParam) : 1;
 
-  // Debug intercept para verificar todas as chamadas API
+  // 2. CONFIGURAÇÃO DA API
+  const api = axios.create({
+    baseURL: "http://localhost:3333",
+    withCredentials: true,
+  });
+
+  // Interceptors
   api.interceptors.response.use(
     (response) => {
       console.log("API Response Success:", response.config.url, response.data);
@@ -88,41 +72,45 @@ function Estoque() {
     return config;
   });
 
-  // Função para calcular o range dos itens mostrados
+  // 3. FUNÇÕES AUXILIARES
   const calculateItemRange = () => {
     if (meta.total === 0) return { start: 0, end: 0 };
-    
     const start = ((meta.currentPage - 1) * meta.perPage) + 1;
     const end = Math.min(meta.currentPage * meta.perPage, meta.total);
-    
     return { start, end };
   };
 
-  // Funções 
+  const shouldShowForm = () => {
+    return editingProductId !== null || searchQuery.trim() === "";
+  };
+
+  const getCategoryName = (categoryId) => {
+    if (!categoryId) return "";
+    const category = categories.find(cat => cat.id === parseInt(categoryId));
+    return category ? category.name : "";
+  };
+
+  // 4. FUNÇÕES DE API
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get("/categories");
+      setCategories(response.data.data || response.data || []);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+      setCategories([]);
+    }
+  };
+
   const fetchProducts = async (pageNumber = 1, query = "") => {
     try {
-      console.log(`Fazendo requisição para página ${pageNumber} com busca "${query}"`);
-      
-      const res = await api.get("/products", {
-        params: { page: pageNumber, search: query },
+      const response = await api.get("/products", {
+        params: { page: pageNumber, search: query }
       });
       
-      console.log("Resposta completa da API:", res.data);
+      const data = Array.isArray(response.data.data) ? response.data.data : [];
+      const metaData = response.data.meta || {};
       
-      const data = Array.isArray(res.data.data) ? res.data.data : [];
-      const metaData = res.data.meta || {};
-      
-      // Debug: Verificar se os produtos têm category_id
-      console.log("Produtos recebidos:", data.map(p => ({
-        id: p.id,
-        name: p.name,
-        category_id: p.category_id
-      })));
-      
-      // Ordena os produtos por ID em ordem decrescente
-      const sortedData = [...data].sort((a, b) => b.id - a.id);
-      
-      setProducts(sortedData);
+      setProducts([...data].sort((a, b) => b.id - a.id));
       setMeta({
         currentPage: Number(metaData.currentPage || pageNumber),
         lastPage: Number(metaData.lastPage || Math.ceil(data.length / 10)),
@@ -130,81 +118,21 @@ function Estoque() {
         perPage: Number(metaData.perPage || 10),
         firstPage: Number(metaData.firstPage || 1)
       });
-
+      
       setError("");
     } catch (err) {
-      console.error("Erro ao buscar produtos:", err);
-      if (err.response && err.response.status === 401) {
-        setError("Você precisa estar logado para visualizar produtos.");
-      } else {
-        setError("Erro ao carregar produtos. Por favor, tente novamente.");
-      }
+      setError(err.response?.status === 401 
+        ? "Você precisa estar logado para visualizar produtos."
+        : "Erro ao carregar produtos. Por favor, tente novamente."
+      );
     }
   };
 
-  const goToPage = (pageNumber) => {
-    if (pageNumber < 1 || pageNumber > meta.lastPage) return;
-    
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set("page", pageNumber.toString());
-    setSearchParams(newParams);
-  };
-
-  // Efeitos
-  // Inicializa o valor de busca a partir dos parâmetros da URL
-  useEffect(() => {
-    const searchFromParams = searchParams.get("search") || "";
-    const newPage = Number(searchParams.get("page") || "1");
-
-    if (searchQuery !== searchFromParams) {
-      setSearchQuery(searchFromParams);
-    }
-
-    fetchProducts(newPage, searchFromParams);
-  }, [searchParams]);
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [searchParams]);
-
-  // Função para lidar com a seleção de categoria
+  // 5. HANDLERS
   const handleCategorySelect = (categoryId) => {
     const categoryIdString = categoryId.toString();
-    console.log("Categoria selecionada:", categoryIdString);
-    
-    // Atualizar ambos os estados de forma consistente
     setSelectedCategoryId(categoryIdString);
-    setNewProduct(prev => ({ 
-      ...prev, 
-      category_id: categoryIdString 
-    }));
-    
-    console.log("Estados após seleção:", {
-      selectedCategoryId: categoryIdString,
-      newProduct_category_id: categoryIdString
-    });
-  };
-
-  // Função para obter o nome da categoria
-  const getCategoryName = (categoryId) => {
-    console.log("getCategoryName chamada com:", categoryId); // Debug
-    
-    if (!categoryId) {
-      console.log("getCategoryName: categoryId vazio ou null");
-      return "";
-    }
-    
-    const category = categories.find(cat => cat.id === parseInt(categoryId));
-    const categoryName = category ? category.name : "";
-    
-    console.log("getCategoryName resultado:", {
-      categoryId: categoryId,
-      parsed: parseInt(categoryId),
-      found: category,
-      name: categoryName
-    }); // Debug
-    
-    return categoryName;
+    setNewProduct(prev => ({ ...prev, category_id: categoryIdString }));
   };
 
   const handleAddProduct = async (e) => {
@@ -309,7 +237,7 @@ function Estoque() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Função para cancelar edição - CORRIGIDA
+  // Função para cancelar edição
   const handleCancelEdit = () => {
     setNewProduct({ name: '', description: '', price: '', stock: '', category_id: '' });
     setSelectedCategoryId("");
@@ -347,32 +275,47 @@ function Estoque() {
     }
   };
 
-  // Função para determinar se o formulário deve ser mostrado
-  const shouldShowForm = () => {
-    // Mostra o formulário se:
-    // 1. Está editando um produto OU
-    // 2. Não há texto na pesquisa (searchQuery está vazio)
-    return editingProductId !== null || searchQuery.trim() === "";
+  const goToPage = (pageNumber) => {
+    if (pageNumber < 1 || pageNumber > meta.lastPage) return;
+    
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", pageNumber.toString());
+    setSearchParams(newParams);
   };
 
-  // Verificar se há mais de 10 produtos no total para estilizar o botão de próximo
-  // Sempre consideramos que há mais de 10 produtos se houver mais de uma página
-  const hasMoreThan10Products = meta.lastPage > 1;
+  // 6. EFFECTS
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-  console.log("Renderizando com meta:", meta);
-  console.log("Condição de renderização da paginação:", meta.lastPage > 1);
+  useEffect(() => {
+    const searchFromParams = searchParams.get("search") || "";
+    const newPage = Number(searchParams.get("page") || "1");
+
+    if (searchQuery !== searchFromParams) {
+      setSearchQuery(searchFromParams);
+    }
+
+    fetchProducts(newPage, searchFromParams);
+  }, [searchParams]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen">
       <Header />
       <div className="grid grid-cols-[220px,1fr] gap-2 p-2">
         <Sidebar />
-        <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide px-96">
-          <div className="p-6">
-            <h1 className="text-2xl flex justify-center font-semibold text-stone-700 mb-4">
+        <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide mx-96">
+          <div className='border-b border-stone-400 px-6 mb-4 pb-4 sticky top-0 bg-white z-10'>
+            <h1 className="text-2xl flex justify-center font-semibold text-stone-700 py-6">
               Estoque de Produtos
             </h1>
+          </div>
 
+          <div className="px-6">
             {/* Mensagens */}
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -509,32 +452,100 @@ function Estoque() {
             <div className="grid grid-cols-1 gap-6">
               {products.length > 0 ? (
                 products.map((product) => (
-                  <div key={product.id} className="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition">
+                  <div key={product.id} className="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition border-l-4 border-blue-500">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-3">{product.name}</h2>
+                        {/* Cabeçalho com nome e categoria */}
+                        <div className="flex items-center gap-4 mb-3">
+                          <h2 className="text-2xl font-bold text-gray-800">{product.name}</h2>
+                          {(() => {
+                            // Buscar categoria usando a mesma lógica do modal
+                            const categoryId = product.category_id || product.categoryId;
+                            const category = categoryId ? categories.find(cat => cat.id === parseInt(categoryId)) : null;
+                            
+                            return category ? (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                                </svg>
+                                {category.name}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                Sem categoria
+                              </span>
+                            );
+                          })()}
+                        </div>
+                        
+                        {/* Descrição */}
                         <p className="text-gray-600 mb-4 text-lg">{product.description}</p>
-                        <p className="text-gray-800 text-lg">
-                          Preço: <span className="text-green-600 font-medium">R$ {Number(product.price).toFixed(2)}</span>
-                        </p>
-                        <p className="text-gray-800 text-lg">Estoque: {product.stock} unidades</p>
-                        {product.category_id && (
-                          <p className="text-gray-800 text-lg">
-                            Categoria: <span className="text-blue-600 font-medium">{getCategoryName(product.category_id)}</span>
-                          </p>
+                        
+                        {/* Informações do produto em grid */}
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="flex items-center">
+                            <svg className="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-gray-700 font-medium">Preço:</span>
+                            <span className="text-green-600 font-bold ml-1">R$ {Number(product.price).toFixed(2)}</span>
+                          </div>
+                          
+                          <div className="flex items-center">
+                            <svg className="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V7l-7-5z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-gray-700 font-medium">Estoque:</span>
+                            <span className={`font-bold ml-1 ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-yellow-600' : 'text-red-600'}`}>
+                              {product.stock} unidades
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Indicador de estoque baixo */}
+                        {product.stock <= 5 && product.stock > 0 && (
+                          <div className="flex items-center p-2 bg-yellow-50 border border-yellow-200 rounded-lg mb-3">
+                            <svg className="w-5 h-5 mr-2 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-yellow-800 text-sm font-medium">Estoque baixo!</span>
+                          </div>
+                        )}
+
+                        {/* Produto sem estoque */}
+                        {product.stock === 0 && (
+                          <div className="flex items-center p-2 bg-red-50 border border-red-200 rounded-lg mb-3">
+                            <svg className="w-5 h-5 mr-2 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-red-800 text-sm font-medium">Produto fora de estoque</span>
+                          </div>
                         )}
                       </div>
-                      <div className="flex space-x-2">
+                      
+                      {/* Botões de ação */}
+                      <div className="flex flex-col space-y-2 ml-4">
                         <button
                           onClick={() => handleEditProduct(product)}
-                          className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition focus:outline-none"
+                          className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition focus:outline-none flex items-center gap-2"
                         >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                          </svg>
                           Editar
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition focus:outline-none"
+                          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition focus:outline-none flex items-center gap-2"
                         >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L10.414 12l1.293-1.293z" clipRule="evenodd" />
+                          </svg>
                           Excluir
                         </button>
                       </div>
@@ -631,7 +642,7 @@ function Estoque() {
                     </button>
                   </div>
 
-                  {/* Informações da paginação - CORRIGIDAS */}
+                  {/* Informações da paginação */}
                   <div className="text-center text-sm text-stone-600">
                     {(() => {
                       const { start, end } = calculateItemRange();
