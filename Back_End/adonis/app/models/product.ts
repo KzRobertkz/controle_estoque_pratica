@@ -19,9 +19,16 @@ export default class Product extends BaseModel {
   @column()
   declare stock: number
 
-  // ADICIONADO: Campo category_id
+  // Campo category_id
   @column()
   declare categoryId: number | null
+
+  // ADICIONADO: Campo validate_date
+  @column.date({
+    serialize: (value: DateTime | null) => value ? value.toISODate() : null,
+    prepare: (value: string | null) => value ? DateTime.fromISO(value) : null,
+  })
+  declare validate_date: DateTime | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -29,9 +36,17 @@ export default class Product extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  // ADICIONADO: Relacionamento com Category
+  // Relacionamento com Category
   @belongsTo(() => Category, {
     foreignKey: 'categoryId',
   })
   declare category: BelongsTo<typeof Category>
+
+  // Atualize o serializador
+  public serialize() {
+    return {
+      ...super.serialize(),
+      validate_date: this.validate_date ? this.validate_date.toISODate() : null
+    }
+  }
 }

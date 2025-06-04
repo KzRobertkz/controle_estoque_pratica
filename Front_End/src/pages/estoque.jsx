@@ -17,15 +17,17 @@ function Estoque() {
   const [successMessage, setSuccessMessage] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
   
   // Estados de Produtos
   const [products, setProducts] = useState([]);
   const [newProduct, setNewProduct] = useState({
-    name: "",
-    description: "",
-    price: "",
-    stock: "",
-    category_id: ""
+    name: '',
+    description: '',
+    price: '',
+    stock: '',
+    category_id: '',
+    validate_date: ''
   });
   const [editingProductId, setEditingProductId] = useState(null);
   
@@ -63,6 +65,7 @@ function Estoque() {
     }
   );
 
+  // Modifique a configuração do axios para incluir o token automaticamente
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -70,6 +73,8 @@ function Estoque() {
     }
     console.log("API Request:", config.url, config.params);
     return config;
+  }, (error) => {
+    return Promise.reject(error);
   });
 
   // 3. FUNÇÕES AUXILIARES
@@ -90,14 +95,93 @@ function Estoque() {
     return category ? category.name : "";
   };
 
+  // Função para limpar o formulário
+  const clearForm = () => {
+    setNewProduct({ 
+      name: '', 
+      description: '', 
+      price: '', 
+      stock: '', 
+      category_id: '', 
+      validate_date: '' 
+    });
+    setSelectedCategoryId("");
+    setEditingProductId(null);
+  };
+
+  // Função para formatar data para exibição
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    } catch (error) {
+      return '';
+    }
+  };
+
+  // Função para formatar data para input
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return ''; // Retorna string vazia se a data for inválida
+      return date.toISOString().split('T')[0];
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return '';
+    }
+  };
+
   // 4. FUNÇÕES DE API
   const fetchCategories = async () => {
+    setLoading(true);
     try {
-      const response = await api.get("/categories");
-      setCategories(response.data.data || response.data || []);
-    } catch (error) {
-      console.error('Erro ao buscar categorias:', error);
-      setCategories([]);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token não encontrado');
+      }
+
+      const response = await api.get('/categories', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // Log para debug
+      console.log('Resposta das categorias:', response.data);
+
+      // Verifica se a resposta tem dados
+      if (response.data) {
+        // Se a resposta for um objeto com propriedade data, use ela
+        const categoriesData = response.data.data || response.data;
+        
+        // Verifica se categoriesData é um array
+        if (Array.isArray(categoriesData)) {
+          setCategories(categoriesData);
+          setError('');
+        } else {
+          console.error('Formato inválido de categorias:', categoriesData);
+          throw new Error('Formato de resposta inválido: categorias não é um array');
+        }
+      } else {
+        throw new Error('Resposta vazia do servidor');
+      }
+    } catch (err) {
+      console.error('Erro detalhado ao buscar categorias:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      
+      if (err.response?.status === 401) {
+        setError('Sessão expirada. Por favor, faça login novamente.');
+        localStorage.removeItem('token');
+        // Adicione aqui sua lógica de redirecionamento para login
+      } else {
+        setError('Erro ao carregar categorias. Por favor, tente novamente.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,118 +214,102 @@ function Estoque() {
 
   // 5. HANDLERS
   const handleCategorySelect = (categoryId) => {
-    const categoryIdString = categoryId.toString();
-    setSelectedCategoryId(categoryIdString);
-    setNewProduct(prev => ({ ...prev, category_id: categoryIdString }));
+    if (!categoryId) return;
+    
+    const categoryIdNumber = parseInt(categoryId);
+    const category = categories.find(cat => cat.id === categoryIdNumber);
+    
+    if (category) {
+      console.log("Categoria selecionada:", category);
+      setSelectedCategoryId(categoryId.toString());
+      setNewProduct(prev => ({ ...prev, category_id: categoryId.toString() }));
+      setIsChooseCategoryModalOpen(false);
+    } else {
+      console.error("Categoria não encontrada:", categoryId);
+      setError('Categoria inválida selecionada');
+    }
   };
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
     
-    // Debug: Verificar os dados antes de enviar
-    console.log("Dados do produto antes de enviar:", {
-      name: newProduct.name,
-      description: newProduct.description,
-      price: newProduct.price,
-      stock: newProduct.stock,
-      category_id: newProduct.category_id,
-      selectedCategoryId: selectedCategoryId
-    });
-    
     try {
-      // CORREÇÃO IMPORTANTE: Priorizar selectedCategoryId sobre newProduct.category_id
-      const categoryIdToUse = selectedCategoryId || newProduct.category_id;
-      
+      if (!selectedCategoryId) {
+        setError('Por favor, selecione uma categoria para o produto.');
+        return;
+      }
+
       const productData = {
         name: newProduct.name,
-        description: newProduct.description,
+        description: newProduct.description || null,
         price: Number(newProduct.price),
         stock: Number(newProduct.stock),
-        category_id: categoryIdToUse ? Number(categoryIdToUse) : null
+        category_id: Number(selectedCategoryId),
+        validate_date: newProduct.validate_date // Mantenha o formato da data original
       };
 
-      // Debug: Verificar os dados finais que serão enviados
-      console.log("Dados finais sendo enviados para a API:", productData);
+      console.log('Dados a serem enviados:', productData);
 
       if (editingProductId) {
         const res = await api.put(`/products/${editingProductId}`, productData);
-        console.log("Resposta da API ao atualizar produto:", res.data);
-        setProducts(products.map(p => (p.id === editingProductId ? res.data : p)));
+        console.log('Resposta da atualização:', res.data);
+        
+        // Atualiza o produto na lista mantendo o formato correto da data
+        setProducts(products.map(p => {
+          if (p.id === editingProductId) {
+            return {
+              ...res.data,
+              validate_date: res.data.validateDate || res.data.validate_date
+            };
+          }
+          return p;
+        }));
+        
         setSuccessMessage("Produto atualizado com sucesso!");
       } else {
         const res = await api.post('/products', productData);
-        console.log("Resposta da API ao criar produto:", res.data);
-        
-        // Recarregar a primeira página após adicionar um produto
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set("page", "1");
-        setSearchParams(newParams);
-        fetchProducts(1, searchQuery); // Forçar atualização da página 1
+        fetchProducts(1, searchQuery);
         setSuccessMessage("Produto adicionado com sucesso!");
       }
 
-      // Limpar formulário
-      setNewProduct({ name: '', description: '', price: '', stock: '', category_id: '' });
-      setSelectedCategoryId("");
-      setEditingProductId(null);
+      clearForm();
       setTimeout(() => setSuccessMessage(''), 3000);
       setError('');
     } catch (err) {
       console.error("Erro ao salvar produto:", err);
-      console.error("Resposta do erro:", err.response?.data);
-      setError('Erro ao salvar produto. Verifique os dados e tente novamente.');
+      setError(err.response?.data?.message || 'Erro ao salvar produto. Verifique os dados e tente novamente.');
     }
   };
 
   const handleEditProduct = (product) => {
-  console.log("Editando produto:", product); // Debug
-    
-    // CORREÇÃO: Buscar o category_id da estrutura correta
-    // O produto pode ter: product.categoryId, product.category_id, ou product.category.id
-    let categoryId = "";
-    
-    if (product.categoryId) {
-      categoryId = product.categoryId.toString();
-    } else if (product.category_id) {
-      categoryId = product.category_id.toString();
-    } else if (product.category && product.category.id) {
-      categoryId = product.category.id.toString();
+    // Formatar a data corretamente considerando ambos os formatos possíveis
+    let validateDate = '';
+    if (product.validate_date) {
+      validateDate = formatDateForInput(product.validate_date);
+    } else if (product.validateDate) {
+      validateDate = formatDateForInput(product.validateDate);
     }
-    
-    console.log("Categoria do produto:", {
-      original_categoryId: product.categoryId,
-      original_category_id: product.category_id,
-      original_category: product.category,
-      converted_categoryId: categoryId,
-      categoryName: getCategoryName(categoryId)
-    }); // Debug detalhado
-    
+
+    console.log('Data recebida:', product.validateDate || product.validate_date);
+    console.log('Data formatada:', validateDate);
+
     setNewProduct({
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      stock: product.stock,
-      category_id: categoryId
+      name: product.name || '',
+      description: product.description || '',
+      price: product.price || '',
+      stock: product.stock || '',
+      category_id: product.category_id?.toString() || product.categoryId?.toString() || '',
+      validate_date: validateDate
     });
     
-    // Definir selectedCategoryId
-    setSelectedCategoryId(categoryId);
-    
-    console.log("Estados sendo definidos:", {
-      selectedCategoryId: categoryId,
-      newProduct_category_id: categoryId,
-      editingProductId: product.id
-    }); // Debug
-    
+    setSelectedCategoryId(product.category_id?.toString() || product.categoryId?.toString() || '');
     setEditingProductId(product.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Função para cancelar edição
   const handleCancelEdit = () => {
-    setNewProduct({ name: '', description: '', price: '', stock: '', category_id: '' });
-    setSelectedCategoryId("");
-    setEditingProductId(null);
+    clearForm();
     console.log("Edição cancelada, estado limpo"); // Debug
   };
 
@@ -285,6 +353,12 @@ function Estoque() {
 
   // 6. EFFECTS
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Você precisa estar logado para acessar esta página');
+      // Adicione aqui sua lógica de redirecionamento para login
+      return;
+    }
     fetchCategories();
   }, []);
 
@@ -309,14 +383,14 @@ function Estoque() {
       <div className="grid grid-cols-[220px,1fr] gap-2 p-2">
         <Sidebar />
         <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide">
-          <div className='border-b border-stone-400 px-32 mb-4 pb-4 sticky top-0 bg-white z-10'>
+          <div className='border-b border-stone-400 px-36 mb-4 pb-4 sticky top-0 bg-white z-10'>
             <h1 className="text-2xl flex justify-center font-semibold text-stone-700 py-6 px-96 ">
               Estoque de Produtos
             </h1>
           </div>
 
           {/* Container do Form */}
-          <div className="max-w-xl mx-auto px-2"> {/* Reduz a largura máxima e adiciona padding */}
+          <div className="max-w-2xl mx-auto px-2">
             {/* Mensagens */}
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -352,8 +426,8 @@ function Estoque() {
 
             {/* Formulário */}
             {shouldShowForm() && (
-              <div className="bg-white text-stone-600 p-6 rounded-lg shadow-xl border border-stone-300 mb-8"> {/* Padding do form */}
-                <h2 className="text-2xl font-semibold mb-4"> {/* Margem inferior */}
+              <div className="bg-white text-stone-600 py-6 pb-10 px-12 rounded-lg shadow-xl border border-stone-300 mb-8">
+                <h2 className="text-2xl font-semibold mb-4">
                   {editingProductId ? "Editar Produto" : "Adicionar Novo Produto"}
                 </h2>
                 <form onSubmit={handleAddProduct}>
@@ -363,7 +437,7 @@ function Estoque() {
                       placeholder="Nome do Produto"
                       value={newProduct.name}
                       onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                      className="p-3 rounded-lg col-span-2 text-lg text-white bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
+                      className="p-3 rounded-lg col-span-2 text-lg text-gray-400 bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
                       required
                     />
                     <input
@@ -371,15 +445,29 @@ function Estoque() {
                       placeholder="Descrição"
                       value={newProduct.description}
                       onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                      className="p-3 rounded-lg col-span-2 text-lg text-white bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
+                      className="p-3 rounded-lg col-span-2 text-lg text-gray-400 bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
                     />
-                    
+                    <div className="col-span-2">
+                      <h3 className="text-stone-600 font-semibold mb-2">Data de Validade</h3>
+                      <input
+                        type="date"
+                        value={newProduct.validate_date || ''} // Garante que nunca será null
+                        onChange={(e) => {
+                          console.log('Nova data:', e.target.value); // Debug
+                          setNewProduct(prev => ({
+                            ...prev,
+                            validate_date: e.target.value
+                          }));
+                        }}
+                        className="p-3 rounded-lg w-full text-lg text-gray-400 bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
+                      />
+                    </div>
                     <input
                       type="number"
                       placeholder="Preço"
                       value={newProduct.price}
                       onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                      className="p-3 rounded-lg text-lg text-white bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
+                      className="p-3 rounded-lg text-lg text-gray-400 bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
                       required
                     />
                     <input
@@ -387,7 +475,7 @@ function Estoque() {
                       placeholder="Estoque"
                       value={newProduct.stock}
                       onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                      className="p-3 rounded-lg text-lg text-white bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
+                      className="p-3 rounded-lg text-lg text-gray-400 bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
                       required
                     />
                   </div>
@@ -507,6 +595,36 @@ function Estoque() {
                             </span>
                           </div>
                         </div>
+
+                        {/* Data de Validade */}
+                        {product.validate_date && (
+                          <div className="flex items-center col-span-2">
+                            <svg 
+                              className="w-5 h-5 mr-2 text-purple-600" 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={2} 
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                              />
+                            </svg>
+                            <span className="text-gray-700 font-medium">Validade:</span>
+                            <span className={`font-bold ml-1 ${
+                              new Date(product.validate_date + 'T00:00:00') < new Date() 
+                                ? 'text-red-600'
+                                : new Date(product.validate_date + 'T00:00:00') <= new Date(new Date().setDate(new Date().getDate() + 30))
+                                ? 'text-yellow-600'
+                                : 'text-green-600'
+                            }`}>
+                              {new Date(product.validate_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              {new Date(product.validate_date + 'T00:00:00') < new Date() && " (Vencido)"}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Indicador de estoque baixo */}
                         {product.stock <= 5 && product.stock > 0 && (
@@ -706,10 +824,21 @@ function Estoque() {
       <ChooseCategoryModal
         isOpen={isChooseCategoryModalOpen}
         onClose={() => setIsChooseCategoryModalOpen(false)}
-        categories={categories}
         onCategorySelect={handleCategorySelect}
         selectedCategoryId={selectedCategoryId}
       />
+
+      {/* Loader */}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl">
+            <div className="flex items-center space-x-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <span className="text-gray-700">Carregando...</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
