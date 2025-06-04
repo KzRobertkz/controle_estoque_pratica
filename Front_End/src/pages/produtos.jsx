@@ -1,37 +1,54 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import axios from 'axios'
-import { useSearchParams } from 'react-router-dom'
-import Header from "../components/Header/header"
-import { Sidebar } from "../components/Sidebar/sidebar"
-import { MdOutlineInventory2 } from "react-icons/md"
+// React e hooks
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
+// Bibliotecas externas
+import axios from 'axios';
+
+// Ícones
+import { MdOutlineInventory2 } from "react-icons/md";
+import { FaFilter } from "react-icons/fa";
+
+// Componentes de layout
+import Header from "../components/Header/header";
+import { Sidebar } from "../components/Sidebar/sidebar";
+
+// Componentes de modal
 import { EditModal } from '../components/modal/editmodal';
 import { DetailsModal } from '../components/modal/detailsmodal';
 import { CreateCategoryModal } from '../components/modal/newcategorymodal';
+import { ManageCategorysModal } from '../components/modal/categorysmodal';
 import { FilterModal } from '../components/modal/filtermodal';
-import { FaFilter } from "react-icons/fa";
 
 export const Produtos = () => {
-  const [allProdutos, setAllProdutos] = useState([]);
-  const [categories, setCategories] = useState([]); 
+  // 1. ESTADOS
+  // Estados de UI e Controle
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Estados para modal de categoria
+  // Estados de Produtos
+  const [allProdutos, setAllProdutos] = useState([]);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Estados de Modais
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
+  const [isManageCategorysModalOpen, setIsManageCategorysModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+  // Estados de Categoria
+  const [categories, setCategories] = useState([]);
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
   const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
 
-  // Estados para modal de filtros
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  // Estados de Filtros
   const [filters, setFilters] = useState({
     category: '',
     minPrice: '',
@@ -41,9 +58,10 @@ export const Produtos = () => {
     id: ''
   });
 
+  // Constantes
   const itemsPerPage = 20;
 
-  // API instance
+  // 2. CONFIGURAÇÃO DA API
   const api = axios.create({
     baseURL: "http://localhost:3333",
     withCredentials: true,
@@ -57,7 +75,63 @@ export const Produtos = () => {
     return config;
   });
 
-  // Função para buscar categorias
+  // 3. FUNÇÕES AUXILIARES
+  const formatarPreco = (preco) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(parseFloat(preco));
+  };
+
+  const calculateItemRange = () => {
+    if (meta.total === 0) return { start: 0, end: 0 };
+    
+    const start = ((meta.currentPage - 1) * meta.perPage) + 1;
+    const end = Math.min(meta.currentPage * meta.perPage, meta.total);
+    
+    return { start, end };
+  };
+
+  const getCategoryName = (produto) => {
+    // Tentar diferentes formas de acessar a categoria
+    let categoryId = null;
+    let categoryName = null;
+
+    // Primeiro, verificar se já tem o nome da categoria no produto
+    if (produto.category && typeof produto.category === 'string') {
+      return produto.category;
+    }
+
+    // Se a categoria é um objeto, pegar o nome dele
+    if (produto.category && typeof produto.category === 'object' && produto.category.name) {
+      return produto.category.name;
+    }
+
+    // Tentar pegar o ID da categoria de diferentes propriedades
+    categoryId = produto.category_id || produto.categoryId || (produto.category && produto.category.id);
+
+    if (!categoryId) {
+      return 'Sem categoria';
+    }
+
+    // Procurar a categoria na lista de categorias
+    const category = categories.find(cat => cat && cat.id === categoryId);
+    return category ? category.name : 'Categoria não encontrada';
+  };
+
+  const getCategoryId = (produto) => {
+    // Se a categoria é um objeto, pegar o ID dele
+    if (produto.category && typeof produto.category === 'object' && produto.category.id) {
+      return produto.category.id;
+    }
+
+    // Tentar pegar o ID da categoria de diferentes propriedades
+    return produto.category_id || produto.categoryId || null;
+  };
+
+  // 4. FUNÇÕES DE DADOS
   const fetchCategories = async () => {
     try {
       const response = await api.get("/categories");
@@ -70,7 +144,102 @@ export const Produtos = () => {
     }
   };
 
-  // Função para criar nova categoria
+  const fetchAllProdutos = async () => {
+    try {
+      setIsLoading(true);
+      console.log('Carregando todos os produtos...');
+      
+      // Fazer múltiplas requisições se necessário para pegar todos os produtos
+      let allData = [];
+      let currentPage = 1;
+      let hasMoreData = true;
+      
+      while (hasMoreData) {
+        const response = await api.get("/products", {
+          params: { 
+            page: currentPage,
+            per_page: 100 // Pegar 100 por vez para ser mais eficiente
+          }
+        });
+        
+        const pageData = Array.isArray(response.data.data) ? response.data.data : [];
+        allData = [...allData, ...pageData];
+        
+        // Verificar se há mais páginas
+        const meta = response.data.meta;
+        if (meta && meta.currentPage < meta.lastPage) {
+          currentPage++;
+        } else {
+          hasMoreData = false;
+        }
+      }
+      
+      // Ordena os produtos por ID em ordem decrescente
+      const sortedData = [...allData].sort((a, b) => b.id - a.id);
+      
+      setAllProdutos(sortedData);
+      setError("");
+      console.log(`Total de produtos carregados: ${sortedData.length}`);
+      console.log('Exemplo de produto:', sortedData[0]); // Para debug
+    } catch (error) {
+      console.error('Erro ao buscar produtos:', error);
+      if (error.response && error.response.status === 401) {
+        setError("Você precisa estar logado para visualizar produtos.");
+      } else {
+        setError("Erro ao carregar produtos. Por favor, tente novamente.");
+      }
+      setAllProdutos([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const applyFiltersToProducts = (products, appliedFilters) => {
+    return products.filter(produto => {
+      // Filtro por ID
+      if (appliedFilters.id && !produto.id.toString().includes(appliedFilters.id)) {
+        return false;
+      }
+      
+      // Filtro por categoria (melhorado)
+      if (appliedFilters.category) {
+        const filterCategoryId = parseInt(appliedFilters.category);
+        const produtoCategoryId = getCategoryId(produto);
+        
+        if (!produtoCategoryId || produtoCategoryId !== filterCategoryId) {
+          return false;
+        }
+      }
+      
+      // Filtro por preço mínimo
+      if (appliedFilters.minPrice && parseFloat(produto.price) < parseFloat(appliedFilters.minPrice)) {
+        return false;
+      }
+      
+      // Filtro por preço máximo
+      if (appliedFilters.maxPrice && parseFloat(produto.price) > parseFloat(appliedFilters.maxPrice)) {
+        return false;
+      }
+      
+      // Filtro por estoque mínimo
+      if (appliedFilters.minStock && parseInt(produto.stock) < parseInt(appliedFilters.minStock)) {
+        return false;
+      }
+      
+      // Filtro por estoque máximo
+      if (appliedFilters.maxStock && parseInt(produto.stock) > parseInt(appliedFilters.maxStock)) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
+
+  // 5. HANDLERS
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     
@@ -130,88 +299,111 @@ export const Produtos = () => {
     }
   };
 
-  // Função para obter nome da categoria (melhorada)
-  const getCategoryName = (produto) => {
-    // Tentar diferentes formas de acessar a categoria
-    let categoryId = null;
-    let categoryName = null;
-
-    // Primeiro, verificar se já tem o nome da categoria no produto
-    if (produto.category && typeof produto.category === 'string') {
-      return produto.category;
-    }
-
-    // Se a categoria é um objeto, pegar o nome dele
-    if (produto.category && typeof produto.category === 'object' && produto.category.name) {
-      return produto.category.name;
-    }
-
-    // Tentar pegar o ID da categoria de diferentes propriedades
-    categoryId = produto.category_id || produto.categoryId || (produto.category && produto.category.id);
-
-    if (!categoryId) {
-      return 'Sem categoria';
-    }
-
-    // Procurar a categoria na lista de categorias
-    const category = categories.find(cat => cat && cat.id === categoryId);
-    return category ? category.name : 'Categoria não encontrada';
+  const handleEdit = (produto) => {
+    setEditingProduct(produto);
+    setIsEditModalOpen(true);
   };
 
-  // Função para obter ID da categoria (melhorada)
-  const getCategoryId = (produto) => {
-    // Se a categoria é um objeto, pegar o ID dele
-    if (produto.category && typeof produto.category === 'object' && produto.category.id) {
-      return produto.category.id;
-    }
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      // Preparar os dados para envio, garantindo que category_id seja enviado
+      const productData = {
+        ...editingProduct,
+        category_id: editingProduct.category_id || editingProduct.categoryId,
+        price: parseFloat(editingProduct.price),
+        stock: parseInt(editingProduct.stock)
+      };
 
-    // Tentar pegar o ID da categoria de diferentes propriedades
-    return produto.category_id || produto.categoryId || null;
-  };
-
-  // Aplicar filtros aos produtos (melhorado)
-  const applyFiltersToProducts = (products, appliedFilters) => {
-    return products.filter(produto => {
-      // Filtro por ID
-      if (appliedFilters.id && !produto.id.toString().includes(appliedFilters.id)) {
-        return false;
-      }
+      const response = await api.put(`/products/${editingProduct.id}`, productData);
       
-      // Filtro por categoria (melhorado)
-      if (appliedFilters.category) {
-        const filterCategoryId = parseInt(appliedFilters.category);
-        const produtoCategoryId = getCategoryId(produto);
+      // Atualizar produto na lista local
+      setAllProdutos(prevProdutos => 
+        prevProdutos.map(p => 
+          p.id === editingProduct.id ? response.data : p
+        )
+      );
+      
+      setIsEditModalOpen(false);
+      setEditingProduct(null);
+      setSuccessMessage('Produto atualizado com sucesso!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error);
+      setError('Erro ao atualizar produto');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
+      try {
+        await api.delete(`/products/${id}`);
         
-        if (!produtoCategoryId || produtoCategoryId !== filterCategoryId) {
-          return false;
+        // Remover produto da lista local
+        setAllProdutos(prevProdutos => prevProdutos.filter(produto => produto.id !== id));
+        setSuccessMessage('Produto excluído com sucesso!');
+        
+        // Se a página atual ficar vazia após a exclusão, voltar uma página
+        const remainingProducts = filteredProdutos.filter(produto => produto.id !== id);
+        const maxPage = Math.ceil(remainingProducts.length / itemsPerPage) || 1;
+        if (currentPage > maxPage) {
+          setCurrentPage(maxPage);
         }
+        
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } catch (error) {
+        console.error('Erro ao excluir produto:', error);
+        let errorMessage = 'Erro ao excluir produto.';
+        if (error.response) {
+          if (error.response.status === 401) {
+            errorMessage = 'Você precisa estar logado para excluir produtos.';
+          } else if (error.response.data && error.response.data.message) {
+            errorMessage = error.response.data.message;
+          }
+        }
+        setError(errorMessage);
       }
-      
-      // Filtro por preço mínimo
-      if (appliedFilters.minPrice && parseFloat(produto.price) < parseFloat(appliedFilters.minPrice)) {
-        return false;
-      }
-      
-      // Filtro por preço máximo
-      if (appliedFilters.maxPrice && parseFloat(produto.price) > parseFloat(appliedFilters.maxPrice)) {
-        return false;
-      }
-      
-      // Filtro por estoque mínimo
-      if (appliedFilters.minStock && parseInt(produto.stock) < parseInt(appliedFilters.minStock)) {
-        return false;
-      }
-      
-      // Filtro por estoque máximo
-      if (appliedFilters.maxStock && parseInt(produto.stock) > parseInt(appliedFilters.maxStock)) {
-        return false;
-      }
-      
-      return true;
-    });
+    }
   };
 
-  // Filtrar produtos baseado na busca e filtros (melhorado)
+  const handleShowDetails = (produto) => {
+    setSelectedProduct(produto);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    const emptyFilters = {
+      category: '',
+      minPrice: '',
+      maxPrice: '',
+      minStock: '',
+      maxStock: '',
+      id: ''
+    };
+    setFilters(emptyFilters);
+  };
+
+  // 6. FUNÇÕES DE NAVEGAÇÃO
+  const goToPage = (pageNumber) => {
+    if (pageNumber < 1 || pageNumber > meta.lastPage) return;
+    setCurrentPage(pageNumber);
+    
+    // Atualizar URL sem causar reload
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", pageNumber.toString());
+    if (searchQuery.trim()) {
+      newParams.set("search", searchQuery);
+    } else {
+      newParams.delete("search");
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+
+  // 7. MEMOS E COMPUTAÇÕES
   const filteredProdutos = useMemo(() => {
     let filtered = allProdutos;
 
@@ -235,14 +427,12 @@ export const Produtos = () => {
     return filtered;
   }, [allProdutos, searchQuery, filters, categories]);
 
-  // Calcular produtos da página atual
   const paginatedProdutos = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredProdutos.slice(startIndex, endIndex);
   }, [filteredProdutos, currentPage, itemsPerPage]);
 
-  // Calcular meta dados da paginação
   const meta = useMemo(() => {
     const total = filteredProdutos.length;
     const lastPage = Math.ceil(total / itemsPerPage) || 1;
@@ -256,84 +446,9 @@ export const Produtos = () => {
     };
   }, [filteredProdutos.length, currentPage, itemsPerPage]);
 
-  // Função para calcular o range dos itens mostrados
-  const calculateItemRange = () => {
-    if (meta.total === 0) return { start: 0, end: 0 };
-    
-    const start = ((meta.currentPage - 1) * meta.perPage) + 1;
-    const end = Math.min(meta.currentPage * meta.perPage, meta.total);
-    
-    return { start, end };
-  };
+  const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
-  // Função para buscar TODOS os produtos de uma vez
-  const fetchAllProdutos = async () => {
-    try {
-      setIsLoading(true);
-      console.log('Carregando todos os produtos...');
-      
-      // Fazer múltiplas requisições se necessário para pegar todos os produtos
-      let allData = [];
-      let currentPage = 1;
-      let hasMoreData = true;
-      
-      while (hasMoreData) {
-        const response = await api.get("/products", {
-          params: { 
-            page: currentPage,
-            per_page: 100 // Pegar 100 por vez para ser mais eficiente
-          }
-        });
-        
-        const pageData = Array.isArray(response.data.data) ? response.data.data : [];
-        allData = [...allData, ...pageData];
-        
-        // Verificar se há mais páginas
-        const meta = response.data.meta;
-        if (meta && meta.currentPage < meta.lastPage) {
-          currentPage++;
-        } else {
-          hasMoreData = false;
-        }
-      }
-      
-      // Ordena os produtos por ID em ordem decrescente
-      const sortedData = [...allData].sort((a, b) => b.id - a.id);
-      
-      setAllProdutos(sortedData);
-      setError("");
-      console.log(`Total de produtos carregados: ${sortedData.length}`);
-      console.log('Exemplo de produto:', sortedData[0]); // Para debug
-    } catch (error) {
-      console.error('Erro ao buscar produtos:', error);
-      if (error.response && error.response.status === 401) {
-        setError("Você precisa estar logado para visualizar produtos.");
-      } else {
-        setError("Erro ao carregar produtos. Por favor, tente novamente.");
-      }
-      setAllProdutos([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Função para navegar entre páginas
-  const goToPage = (pageNumber) => {
-    if (pageNumber < 1 || pageNumber > meta.lastPage) return;
-    setCurrentPage(pageNumber);
-    
-    // Atualizar URL sem causar reload
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set("page", pageNumber.toString());
-    if (searchQuery.trim()) {
-      newParams.set("search", searchQuery);
-    } else {
-      newParams.delete("search");
-    }
-    setSearchParams(newParams, { replace: true });
-  };
-
-  // Inicialização - carrega todos os produtos e categorias
+  // 8. EFFECTS
   useEffect(() => {
     const loadData = async () => {
       // Carregar categorias primeiro, depois produtos
@@ -370,112 +485,6 @@ export const Produtos = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
-
-  const formatarPreco = (preco) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(parseFloat(preco));
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
-      try {
-        await api.delete(`/products/${id}`);
-        
-        // Remover produto da lista local
-        setAllProdutos(prevProdutos => prevProdutos.filter(produto => produto.id !== id));
-        setSuccessMessage('Produto excluído com sucesso!');
-        
-        // Se a página atual ficar vazia após a exclusão, voltar uma página
-        const remainingProducts = filteredProdutos.filter(produto => produto.id !== id);
-        const maxPage = Math.ceil(remainingProducts.length / itemsPerPage) || 1;
-        if (currentPage > maxPage) {
-          setCurrentPage(maxPage);
-        }
-        
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } catch (error) {
-        console.error('Erro ao excluir produto:', error);
-        let errorMessage = 'Erro ao excluir produto.';
-        if (error.response) {
-          if (error.response.status === 401) {
-            errorMessage = 'Você precisa estar logado para excluir produtos.';
-          } else if (error.response.data && error.response.data.message) {
-            errorMessage = error.response.data.message;
-          }
-        }
-        setError(errorMessage);
-      }
-    }
-  };
-
-  const handleEdit = (produto) => {
-    setEditingProduct(produto);
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      // Preparar os dados para envio, garantindo que category_id seja enviado
-      const productData = {
-        ...editingProduct,
-        category_id: editingProduct.category_id || editingProduct.categoryId,
-        price: parseFloat(editingProduct.price),
-        stock: parseInt(editingProduct.stock)
-      };
-
-      const response = await api.put(`/products/${editingProduct.id}`, productData);
-      
-      // Atualizar produto na lista local
-      setAllProdutos(prevProdutos => 
-        prevProdutos.map(p => 
-          p.id === editingProduct.id ? response.data : p
-        )
-      );
-      
-      setIsEditModalOpen(false);
-      setEditingProduct(null);
-      setSuccessMessage('Produto atualizado com sucesso!');
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (error) {
-      console.error('Erro ao atualizar produto:', error);
-      setError('Erro ao atualizar produto');
-    }
-  };
-
-  const handleShowDetails = (produto) => {
-    setSelectedProduct(produto);
-    setIsDetailsModalOpen(true);
-  };
-
-  // Função para lidar com mudanças no input de pesquisa
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  // Funções para o modal de filtros
-  const handleApplyFilters = (newFilters) => {
-    setFilters(newFilters);
-  };
-
-  const handleClearFilters = () => {
-    const emptyFilters = {
-      category: '',
-      minPrice: '',
-      maxPrice: '',
-      minStock: '',
-      maxStock: '',
-      id: ''
-    };
-    setFilters(emptyFilters);
-  };
-
-  // Verificar se há filtros ativos
-  const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
   if (isLoading) {
     return (
@@ -516,6 +525,12 @@ export const Produtos = () => {
                   className="px-4 py-2 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none"
                 >
                   Nova Categoria
+                </button>
+                <button 
+                  onClick={() => setIsManageCategorysModalOpen(true)}
+                  className="px-4 py-2 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none"
+                >
+                  Categorias
                 </button>
                 <button 
                   onClick={() => setIsFilterModalOpen(true)}
@@ -807,6 +822,14 @@ export const Produtos = () => {
         setCategoryDescription={setCategoryDescription}
         onSubmit={handleCreateCategory}
         isSubmitting={isSubmittingCategory}
+      />
+
+      <ManageCategorysModal
+        isOpen={isManageCategorysModalOpen}
+        onClose={() => setIsManageCategorysModalOpen(false)}
+        onCategoryChange={() => {
+          fetchCategories(); // Recarrega as categorias quando houver mudanças
+        }}
       />
 
       {/* Modal de filtros */}
