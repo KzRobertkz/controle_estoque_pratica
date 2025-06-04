@@ -1,6 +1,6 @@
-
 import type { HttpContext } from '@adonisjs/core/http'
 import Product from '#models/product'
+import { DateTime } from 'luxon'
 
 export default class ProductsController {
   async index({ request, response }: HttpContext) {
@@ -31,23 +31,46 @@ export default class ProductsController {
 
   
   async store({ request, response }: HttpContext) {
-    const data = request.only(['name', 'description', 'price', 'stock', 'category_id'])
-    
-    // Converter category_id para categoryId (camelCase usado pelo Lucid)
-    const productData = {
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      stock: data.stock,
-      categoryId: data.category_id || null
-    }
+    try {
+      const data = request.only(['name', 'description', 'price', 'stock', 'category_id', 'validate_date'])
+      
+      // Log para debug
+      console.log('Dados recebidos:', data)
 
-    const product = await Product.create(productData)
-    
-    // Fazer preload da categoria antes de retornar
-    await product.load('category')
-    
-    return response.json(product)
+      // Tratamento da data
+      let validateDate = null
+      if (data.validate_date) {
+        validateDate = DateTime.fromISO(data.validate_date)
+        if (!validateDate.isValid) {
+          return response.badRequest({
+            message: 'Data de validade inválida'
+          })
+        }
+      }
+
+      const productData = {
+        name: data.name,
+        description: data.description,
+        price: Number(data.price),
+        stock: Number(data.stock),
+        categoryId: data.category_id,
+        validate_date: validateDate // Usar a data convertida
+      }
+
+      // Log para debug
+      console.log('Dados processados:', productData)
+
+      const product = await Product.create(productData)
+      await product.load('category')
+
+      return response.json(product)
+    } catch (error) {
+      console.error('Erro ao criar produto:', error)
+      return response.internalServerError({
+        message: 'Erro ao criar produto',
+        error: error.message
+      })
+    }
   }
 
   async destroy({ request, response }: HttpContext) {
@@ -80,25 +103,66 @@ export default class ProductsController {
   }
 
   async update({ params, request, response }: HttpContext) {
-    const product = await Product.findOrFail(params.id)
-    const data = request.only(['name', 'description', 'price', 'stock', 'category_id'])
-    
-    // Converter category_id para categoryId
-    const updateData = {
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      stock: data.stock,
-      categoryId: data.category_id || null
-    }
+    try {
+      const product = await Product.findOrFail(params.id)
+      const data = request.only(['name', 'description', 'price', 'stock', 'category_id', 'validate_date'])
+      
+      // Log para debug
+      console.log('Dados recebidos:', data)
+      
+      // Tratamento específico para a data
+      let validadeDate = null
+      if (data.validate_date) {
+        try {
+          validadeDate = DateTime.fromISO(data.validate_date)
+          if (!validadeDate.isValid) {
+            throw new Error('Data inválida')
+          }
+        } catch (error) {
+          console.error('Erro ao processar data:', error)
+          return response.badRequest({
+            message: 'Data de validade inválida',
+            error: error.message
+          })
+        }
+      }
 
-    product.merge(updateData)
-    await product.save()
-    
-    // Fazer preload da categoria antes de retornar
-    await product.load('category')
-    
-    return response.json(product)
+      const productData = {
+        name: data.name || product.name,
+        description: data.description,
+        price: data.price ? Number(data.price) : product.price,
+        stock: data.stock ? Number(data.stock) : product.stock,
+        categoryId: data.category_id || product.categoryId,
+        validate_date: validadeDate
+      }
+
+      // Log para debug dos dados processados
+      console.log('Dados processados:', {
+        ...productData,
+        validate_date: productData.validate_date ? productData.validate_date.toISO() : null
+      })
+
+      try {
+        await product.merge(productData).save()
+        await product.load('category')
+        
+        // Log do produto salvo
+        console.log('Produto atualizado:', product.toJSON())
+        
+        return response.json(product)
+      } catch (saveError) {
+        console.error('Erro ao salvar:', saveError)
+        throw saveError
+      }
+
+    } catch (error) {
+      console.error('Erro detalhado:', error)
+      return response.internalServerError({
+        message: 'Erro ao atualizar produto',
+        error: error.message,
+        stack: error.stack
+      })
+    }
   }
 
   // Outras funções

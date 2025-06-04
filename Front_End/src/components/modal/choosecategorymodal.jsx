@@ -1,98 +1,135 @@
 import { useState, useEffect } from "react";
-import { FiX } from "react-icons/fi";
+import { FiX, FiSearch } from "react-icons/fi";
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:3333',
+  withCredentials: true
+});
 
 export const ChooseCategoryModal = ({ 
   isOpen, 
   onClose, 
-  categories,
   onCategorySelect,
   selectedCategoryId = ""
 }) => {
-    const [localSelectedCategory, setLocalSelectedCategory] = useState(selectedCategoryId);
-    
-    // CORREÇÃO: Atualizar o estado local quando selectedCategoryId mudar
-    useEffect(() => {
-        if (isOpen) {
-            console.log("Modal aberto com selectedCategoryId:", selectedCategoryId); // Debug
-            setLocalSelectedCategory(selectedCategoryId);
+  // Inicialize categories como um array vazio
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [localSelectedCategory, setLocalSelectedCategory] = useState(selectedCategoryId);
+  const [isSearchingCategory, setIsSearchingCategory] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [error, setError] = useState('');
+
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token não encontrado');
+      }
+
+      const response = await api.get('/categories', {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-    }, [selectedCategoryId, isOpen]);
-    
-    if (!isOpen) return null;
+      });
 
-    const handleConfirm = () => {
-        console.log("Confirmando categoria:", localSelectedCategory); // Debug
-        onCategorySelect(localSelectedCategory);
-        onClose();
-    };
+      // Log para debug
+      console.log('Resposta bruta:', response);
+      console.log('Dados da resposta:', response.data);
 
-    const handleCancel = () => {
-        setLocalSelectedCategory(selectedCategoryId); // Reset para o valor original
-        onClose();
-    };
-    
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg w-96 max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-gray-800 flex items-center">
-                        Escolha uma Categoria
-                    </h2>
-                    <button
-                        onClick={handleCancel}
-                        className="text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                        <FiX size={20} />
-                    </button>
-                </div>
+      // Garante que categories seja sempre um array
+      if (response.data && Array.isArray(response.data)) {
+        setCategories(response.data);
+      } else if (response.data && Array.isArray(response.data.data)) {
+        setCategories(response.data.data);
+      } else {
+        setCategories([]);
+        throw new Error('Formato de resposta inválido');
+      }
+      
+      setError('');
+    } catch (err) {
+      console.error('Erro ao buscar categorias:', err);
+      setCategories([]); // Garante que categories seja um array vazio em caso de erro
+      setError('Erro ao carregar categorias. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Categoria
-                    </label>
-                    <select
-                        value={localSelectedCategory}
-                        onChange={(e) => {
-                            console.log("Categoria selecionada no modal:", e.target.value); // Debug
-                            setLocalSelectedCategory(e.target.value);
-                        }}
-                        className="mt-1 text-gray-700 block w-full rounded-md border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                        <option className='font-medium text-gray-400' value="">Selecione uma categoria</option>
-                        {categories.map((category) => (
-                            <option className='font-medium' key={category.id} value={category.id}>
-                                {category.name}
-                            </option>
-                        ))}
-                    </select>
-                    
-                    {/* Mostrar descrição da categoria selecionada */}
-                    {localSelectedCategory && (
-                        <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-600">
-                            {categories.find(cat => cat.id === parseInt(localSelectedCategory))?.description || 'Sem descrição'}
-                        </div>
-                    )}
-                </div>
+  useEffect(() => {
+    if (isOpen) {
+      setLocalSelectedCategory(selectedCategoryId);
+      setIsSearchingCategory(false);
+      setCategorySearch('');
+      setError('');
+      fetchCategories();
+    }
+  }, [isOpen, selectedCategoryId]);
 
-                {/* Botões */}
-                <div className="flex justify-end space-x-3">
-                    <button
-                        type="button"
-                        onClick={handleCancel}
-                        className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleConfirm}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                        disabled={!localSelectedCategory}
-                    >
-                        Confirmar
-                    </button>
-                </div>
-            </div>
+  // Filtra as categorias baseado na pesquisa
+  const filteredCategories = categories.filter(category =>
+    category?.name?.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-[500px] max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Escolher Categoria</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <FiX size={24} />
+          </button>
         </div>
-    );
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Pesquisar categoria..."
+            value={categorySearch}
+            onChange={(e) => setCategorySearch(e.target.value)}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        <div className="space-y-2">
+          {loading ? (
+            <div className="text-center p-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Carregando categorias...</p>
+            </div>
+          ) : filteredCategories.length > 0 ? (
+            filteredCategories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => {
+                  onCategorySelect(category.id);
+                  onClose();
+                }}
+                className={`w-full p-3 text-left rounded hover:bg-gray-100 ${
+                  localSelectedCategory === category.id.toString() ? 'bg-blue-50 border-blue-500' : 'border-gray-200'
+                } border`}
+              >
+                {category.name}
+              </button>
+            ))
+          ) : (
+            <p className="text-center text-gray-500 p-4">
+              {categorySearch ? 'Nenhuma categoria encontrada' : 'Nenhuma categoria disponível'}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
