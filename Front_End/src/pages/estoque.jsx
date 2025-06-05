@@ -516,12 +516,11 @@ function Estoque() {
                         Remover Categoria
                       </button>
                     )}
-
                     {editingProductId && (
                       <button
                         type="button"
                         onClick={handleCancelEdit}
-                        className="px-6 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 transition focus:outline-none"
+                        className="px-8 ml-52 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 transition focus:outline-none"
                       >
                         Cancelar
                       </button>

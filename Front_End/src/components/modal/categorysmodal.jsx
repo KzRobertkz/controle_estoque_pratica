@@ -32,11 +32,14 @@ export const ManageCategorysModal = ({
     return config;
   });
 
+  // Modificar a função fetchCategories para ordenar por ID
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
       const response = await api.get("/categories");
-      setCategories(response.data.data || response.data);
+      const sortedCategories = (response.data.data || response.data)
+        .sort((a, b) => b.id - a.id); // Ordena por ID decrescente
+      setCategories(sortedCategories);
       setError('');
     } catch (err) {
       setError('Erro ao carregar categorias');
@@ -108,7 +111,7 @@ export const ManageCategorysModal = ({
     }
   };
 
-  // Função para fechar o modal e recarregar a página
+  // Modificar o handleClose para recarregar a página
   const handleClose = () => {
     onClose();
     window.location.reload();
