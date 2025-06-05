@@ -6,7 +6,7 @@ import { BiLogOut } from "react-icons/bi";
 import { CgProfile } from "react-icons/cg";
 import { useSearch } from "./searchcontent";
 import { CommandMenu } from './commandbar';
-import { FaRegBell } from "react-icons/fa";
+import { GoBell } from "react-icons/go";
 import {NotificationsModal}  from "../modal/notificationsmodal";
 
 export default function Header() {
@@ -129,7 +129,7 @@ export default function Header() {
                 onClick={() => setIsNotificationsModalOpen(true)}
                 className="flex flex-col items-center text-blue-600 font-medium text-base hover:text-blue-800 transition-transform hover:scale-110 cursor-pointer"
               >
-                <FaRegBell className="text-4xl" />
+                <GoBell className="text-4xl" />
                 <span>
                   Notificações
                 </span>
