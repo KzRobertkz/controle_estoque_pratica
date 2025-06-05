@@ -19,7 +19,7 @@ import { DetailsModal } from '../components/modal/detailsmodal';
 import { CreateCategoryModal } from '../components/modal/newcategorymodal';
 import { ManageCategorysModal } from '../components/modal/categorysmodal';
 import { FilterModal } from '../components/modal/filtermodal';
-import { ManageProductsModal } from '../components/modal/manageproductsmodal';
+import { GlobalSettingsModal } from '../components/modal/globalsettingsmodal';
 
 export const Produtos = () => {
   // 1. ESTADOS
@@ -37,14 +37,13 @@ export const Produtos = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   
 
-  // Estados de Modais
+  // Estados de Modais - Nomenclatura padronizada
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
   const [isManageCategorysModalOpen, setIsManageCategorysModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [isManageProductsModalOpen, setIsManageProductsModalOpen] = useState(false);
-  const [selectedProductForManagement, setSelectedProductForManagement] = useState(null);
+  const [isGlobalSettingsModalOpen, setIsGlobalSettingsModalOpen] = useState(false);
 
   // Estados de Categoria
   const [categories, setCategories] = useState([]);
@@ -99,29 +98,18 @@ export const Produtos = () => {
   };
 
   const getCategoryName = (produto) => {
-    // Tentar diferentes formas de acessar a categoria
-    let categoryId = null;
-    let categoryName = null;
-
-    // Primeiro, verificar se já tem o nome da categoria no produto
     if (produto.category && typeof produto.category === 'string') {
       return produto.category;
     }
 
-    // Se a categoria é um objeto, pegar o nome dele
-    if (produto.category && typeof produto.category === 'object' && produto.category.name) {
+    if (produto.category?.name) {
       return produto.category.name;
     }
 
-    // Tentar pegar o ID da categoria de diferentes propriedades
-    categoryId = produto.category_id || produto.categoryId || (produto.category && produto.category.id);
+    const categoryId = produto.category_id || produto.categoryId;
+    if (!categoryId) return 'Sem categoria';
 
-    if (!categoryId) {
-      return 'Sem categoria';
-    }
-
-    // Procurar a categoria na lista de categorias
-    const category = categories.find(cat => cat && cat.id === categoryId);
+    const category = categories.find(cat => cat?.id === categoryId);
     return category ? category.name : 'Categoria não encontrada';
   };
 
@@ -133,6 +121,11 @@ export const Produtos = () => {
 
     // Tentar pegar o ID da categoria de diferentes propriedades
     return produto.category_id || produto.categoryId || null;
+  };
+
+  const handleCloseGlobalSettingsModal = () => {
+    setIsGlobalSettingsModalOpen(false);
+    fetchGlobalSettings(); // Recarrega as configurações após fechar o modal
   };
 
   // 4. FUNÇÕES DE DADOS
@@ -240,27 +233,6 @@ export const Produtos = () => {
   };
 
   // 5. HANDLERS
-  const handleSaveProductSettings = async (settings) => {
-    try {
-      // Fazer a chamada API para salvar as configurações
-      await api.put(`/products/${selectedProductForManagement.id}/settings`, settings);
-      
-      // Atualizar o produto na lista
-      setAllProdutos(prevProdutos => 
-        prevProdutos.map(p => 
-          p.id === selectedProductForManagement.id 
-            ? { ...p, ...settings }
-            : p
-        )
-      );
-      
-      setSuccessMessage('Configurações salvas com sucesso!');
-    } catch (error) {
-      setError('Erro ao salvar as configurações');
-      console.error(error);
-    }
-  };
-
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
@@ -441,8 +413,8 @@ export const Produtos = () => {
         const categoryName = getCategoryName(produto).toLowerCase();
         
         return name.includes(searchTerm) || 
-               id.includes(searchTerm) || 
-               categoryName.includes(searchTerm);
+          id.includes(searchTerm) || 
+          categoryName.includes(searchTerm);
       });
     }
 
@@ -546,7 +518,7 @@ export const Produtos = () => {
                   {hasActiveFilters && ` | Filtrados: ${filteredProdutos.length}`}
                 </div>
                 <button 
-                  onClick={() => setIsManageProductsModalOpen(true)}
+                  onClick={() => setIsGlobalSettingsModalOpen(true)}
                   className="px-4 py-2 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none"
                 >
                   Gerenciar Produtos
@@ -875,14 +847,9 @@ export const Produtos = () => {
       />
 
       {/* Modal de gerenciamento de produtos */}
-      <ManageProductsModal 
-        isOpen={isManageProductsModalOpen}
-        onClose={() => {
-          setIsManageProductsModalOpen(false);
-          setSelectedProductForManagement(null);
-        }}
-        product={selectedProductForManagement}
-        onSave={handleSaveProductSettings}
+      <GlobalSettingsModal 
+        isOpen={isGlobalSettingsModalOpen} // Corrigido de isGlobalSettingModalOpen
+        onClose={handleCloseGlobalSettingsModal}
       />
     </div>
   );
