@@ -170,13 +170,13 @@ export default class ProductsController {
     try {
       const recentProducts = await Product
         .query()
-        .orderBy('id', 'desc') // Ordenação por ID decrescente
+        .orderBy('id', 'desc') // Ordenação primária por ID decrescente
         .orderBy('created_at', 'desc') // Ordenação secundária por data
         .limit(2) // limite para 2 produtos mais recentes
-        .select(['id', 'name', 'price', 'created_at'])
+        .preload('category') // Carrega a relação com categoria
+        .select(['id', 'name', 'price', 'created_at', 'updated_at', 'category_id'])
         .exec()
       
-      // Log para debug
       console.log('Produtos recentes:', recentProducts)
       
       return response.ok(recentProducts)
@@ -206,45 +206,21 @@ export default class ProductsController {
 
   public async getPages({ request, response }: HttpContext) {
     try {
-      const page = Number(request.input('page', 1))
-      const limit = Number(request.input('limit', 25))
-
-      // Validação básica
-      if (page < 1) {
-        return response.badRequest({ 
-          message: 'Número da página deve ser maior que 0' 
-        })
-      }
-
-      if (limit < 1 || limit > 100) {
-        return response.badRequest({ 
-          message: 'Limite deve estar entre 1 e 100' 
-        })
-      }
+      const page = request.input('page', 1)
+      const limit = 25
 
       const query = Product.query()
-      query.orderBy('id', 'desc') 
-
+        .orderBy('id', 'desc') // Ordenação primária por ID decrescente
+        .orderBy('created_at', 'desc') // Ordenação secundária por data de criação
+        .preload('category')
+  
       const products = await query.paginate(page, limit)
-
-      // Estrutura correta baseada no AdonisJS
-      const response_data = {
-        data: products.all(), // ou products (se products já for o array)
-        meta: {
-          currentPage: products.currentPage,
-          firstPage: products.firstPage || 1,
-          lastPage: products.lastPage,
-          perPage: products.perPage,
-          total: products.total
-        }
-      }
-
-      return response.ok(response_data)
+  
+      return response.ok(products)
     } catch (error) {
-      console.error('Erro na paginação:', error)
-      return response.internalServerError({ 
-        message: 'Erro ao paginar produtos', 
-        error: error.message 
+      return response.internalServerError({
+        message: 'Erro ao buscar histórico',
+        error: error.message
       })
     }
   }

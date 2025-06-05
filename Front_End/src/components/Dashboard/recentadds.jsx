@@ -59,7 +59,9 @@ const TableHead = () => {
       <tr className='text-sm font-normal text-stone-700'>
         <th className='text-start p-1.5'>ID</th>
         <th className='text-start p-1.5'>Nome do Produto</th>
+        <th className='text-start p-1.5'>Categoria</th>
         <th className='text-start p-1.5'>Data de Adição</th>
+        <th className='text-start p-1.5'>Última Atualização</th>
         <th className='text-start p-1.5'>Preço</th>
       </tr>
     </thead>
@@ -67,25 +69,15 @@ const TableHead = () => {
 }
 
 const TableRow = ({ item }) => {
-  console.log('Item completo:', item); // Debug do objeto completo
-  
   const formatarData = (data) => {
     try {
-      // Primeiro verifica se a data é válida
       if (!data) return 'Data não disponível';
-      
-      // Converte a string ISO para objeto Date
       const date = new Date(data);
-      
-      // Verifica se a data é válida
       if (isNaN(date.getTime())) return 'Data inválida';
-      
-      // Formata a data no padrão brasileiro
       return new Intl.DateTimeFormat('pt-BR', {
         dateStyle: 'short',
         timeStyle: 'short'
       }).format(date);
-      
     } catch (error) {
       console.error('Erro ao formatar data:', error);
       return 'Data inválida';
@@ -103,7 +95,9 @@ const TableRow = ({ item }) => {
     <tr className='text-sm text-stone-600 border-t border-stone-200'>
       <td className='p-1.5 text-stone-500'>#{item.id}</td>
       <td className='p-1.5'>{item.name}</td>
+      <td className='p-1.5'>{item.category?.name || 'Sem categoria'}</td>
       <td className='p-1.5'>{formatarData(item.createdAt)}</td>
+      <td className='p-1.5'>{formatarData(item.updatedAt)}</td>
       <td className='p-1.5'>{formatarPreco(item.price)}</td>
     </tr>
   )

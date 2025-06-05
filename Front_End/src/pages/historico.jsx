@@ -120,7 +120,7 @@ export const Historico = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="4" className="text-center py-8 text-stone-500">
+                          <td colSpan="6" className="text-center py-8 text-stone-500">
                             Nenhum item encontrado no histórico
                           </td>
                         </tr>
@@ -209,7 +209,9 @@ const TableHead = () => {
       <tr className='text-lg font-medium text-stone-700'>
         <th className='text-start p-4 px-6'>ID</th>
         <th className='text-start p-4 px-6'>Nome do Produto</th>
+        <th className='text-start p-4 px-6'>Categoria</th>
         <th className='text-start p-4 px-6'>Data de Adição</th>
+        <th className='text-start p-4 px-6'>Última Atualização</th>
         <th className='text-start p-4 px-6'>Preço</th>
       </tr>
     </thead>
@@ -243,7 +245,11 @@ const TableRow = ({ item }) => {
     <tr className='text-base text-stone-600 hover:bg-stone-50 transition-colors duration-200'>
       <td className='p-4 px-6'>#{item.id}</td>
       <td className='p-4 px-6'>{item.name}</td>
+      <td className='p-4 px-6'>
+        {item.category?.name || 'Sem categoria'}
+      </td>
       <td className='p-4 px-6'>{formatarData(item.createdAt)}</td>
+      <td className='p-4 px-6'>{formatarData(item.updatedAt)}</td>
       <td className='p-4 px-6'>{formatarPreco(item.price)}</td>
     </tr>
   )
