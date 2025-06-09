@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FiX, FiEdit2, FiTrash2, FiPlus, FiLoader } from 'react-icons/fi';
 import axios from 'axios';
+import { toast, ToastContainer} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const ManageCategorysModal = ({ 
   isOpen, 
@@ -9,7 +11,6 @@ export const ManageCategorysModal = ({
 }) => {
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -81,8 +82,7 @@ export const ManageCategorysModal = ({
         cat.id === categoryId ? { ...cat, ...editForm } : cat
       ));
       
-      setSuccess('Categoria atualizada com sucesso!');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Categoria atualizada com sucesso!');
       
       setEditingCategory(null);
       setEditForm({ name: '', description: '' });
@@ -102,8 +102,7 @@ export const ManageCategorysModal = ({
       await api.delete(`/categories/${categoryId}`);
       
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-      setSuccess('Categoria excluída com sucesso!');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Categoria excluída com sucesso!');
       
       if (onCategoryChange) onCategoryChange();
     } catch (err) {
@@ -159,12 +158,6 @@ export const ManageCategorysModal = ({
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
             {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-            {success}
           </div>
         )}
 
@@ -291,6 +284,8 @@ export const ManageCategorysModal = ({
           </>
         )}
       </div>
+
+      <ToastContainer />
     </div>
   );
 };

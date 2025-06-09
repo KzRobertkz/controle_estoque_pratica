@@ -4,6 +4,8 @@ import { useSearchParams } from 'react-router-dom';
 
 // Bibliotecas externas
 import axios from 'axios';
+import { ToastContainer, toast, Slide} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Ícones
 import { MdOutlineInventory2 } from "react-icons/md";
@@ -26,10 +28,10 @@ export const Produtos = () => {
   // Estados de UI e Controle
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [notificationsShown, setNotificationsShown] = useState(false); // Novo estado para controlar notificações
 
   // Estados de Produtos
   const [allProdutos, setAllProdutos] = useState([]);
@@ -125,7 +127,6 @@ export const Produtos = () => {
 
   const handleCloseGlobalSettingsModal = () => {
     setIsGlobalSettingsModalOpen(false);
-    fetchGlobalSettings(); // Recarrega as configurações após fechar o modal
   };
 
   // 4. FUNÇÕES DE DADOS
@@ -144,9 +145,7 @@ export const Produtos = () => {
   const fetchAllProdutos = async () => {
     try {
       setIsLoading(true);
-      console.log('Carregando todos os produtos...');
       
-      // Fazer múltiplas requisições se necessário para pegar todos os produtos
       let allData = [];
       let currentPage = 1;
       let hasMoreData = true;
@@ -155,14 +154,20 @@ export const Produtos = () => {
         const response = await api.get("/products", {
           params: { 
             page: currentPage,
-            per_page: 100 // Pegar 100 por vez para ser mais eficiente
+            per_page: 100
           }
         });
         
-        const pageData = Array.isArray(response.data.data) ? response.data.data : [];
+        // Map the data and ensure validate_date is set from validateDate
+        const pageData = Array.isArray(response.data.data) 
+          ? response.data.data.map(product => ({
+              ...product,
+              validate_date: product.validateDate // Use validateDate from API
+            }))
+          : [];
+
         allData = [...allData, ...pageData];
         
-        // Verificar se há mais páginas
         const meta = response.data.meta;
         if (meta && meta.currentPage < meta.lastPage) {
           currentPage++;
@@ -171,20 +176,17 @@ export const Produtos = () => {
         }
       }
       
-      // Ordena os produtos por ID em ordem decrescente
       const sortedData = [...allData].sort((a, b) => b.id - a.id);
       
+      console.log('Exemplo de produto processado:', sortedData[0]); // Debug log
       setAllProdutos(sortedData);
       setError("");
-      console.log(`Total de produtos carregados: ${sortedData.length}`);
-      console.log('Exemplo de produto:', sortedData[0]); // Para debug
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
-      if (error.response && error.response.status === 401) {
-        setError("Você precisa estar logado para visualizar produtos.");
-      } else {
-        setError("Erro ao carregar produtos. Por favor, tente novamente.");
-      }
+      setError(error.response?.status === 401 
+        ? "Você precisa estar logado para visualizar produtos."
+        : "Erro ao carregar produtos. Por favor, tente novamente."
+      );
       setAllProdutos([]);
     } finally {
       setIsLoading(false);
@@ -232,6 +234,128 @@ export const Produtos = () => {
     });
   };
 
+  const validateNotify = async () => {
+    try {
+      const response = await api.get('/settings');
+      const settings = response.data;
+      
+      if (!settings.notifyBeforeExpiry) return;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      console.log('Settings:', settings);
+      console.log('Total produtos:', allProdutos.length);
+
+      const productsNearExpiry = allProdutos.filter(product => {
+        // Check both validateDate and validate_date fields
+        const expiryDate = product.validate_date || product.validateDate;
+        
+        if (!expiryDate) {
+          console.log(`Produto ${product.id} sem data de validade`);
+          return false;
+        }
+
+        const validityDate = new Date(expiryDate);
+        validityDate.setHours(0, 0, 0, 0);
+
+        const diffDays = Math.ceil((validityDate - today) / (1000 * 60 * 60 * 24));
+
+        console.log('Verificando produto:', {
+          id: product.id,
+          name: product.name,
+          validate_date: expiryDate,
+          validityDate: validityDate.toISOString(),
+          today: today.toISOString(),
+          diffDays,
+          daysBeforeExpiryNotification: settings.daysBeforeExpiryNotification
+        });
+
+        return diffDays > 0 && diffDays <= settings.daysBeforeExpiryNotification;
+      });
+
+      console.log('Produtos encontrados:', productsNearExpiry.length);
+
+      if (productsNearExpiry.length === 0) {
+        return; // Removido o toast de "nenhum produto próximo do vencimento"
+      }
+
+      productsNearExpiry.forEach(product => {
+        const validityDate = new Date(product.validate_date);
+        validityDate.setHours(0, 0, 0, 0);
+
+        const diffDays = Math.ceil((validityDate - today) / (1000 * 60 * 60 * 24));
+
+        // Sempre será warning pois já filtramos produtos vencidos
+        const message = `Vence em ${diffDays} dias: código #${product.id} - ${product.name}`;
+
+        toast.warning(message, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Slide,
+          className: "w-96",
+          style: {
+            width: "384px",
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Erro ao verificar produtos a vencer:', error);
+    }
+  };
+
+  const lowStockNotify = async () => {
+    try {
+      const response = await api.get('/settings');
+      const settings = response.data;
+      
+      if (!settings.notifyLowStock) return;
+
+      const lowStockProducts = allProdutos.filter(product => 
+        product.stock <= settings.defaultMinStock && product.stock > 0
+      );
+
+      lowStockProducts.forEach(product => {
+        toast.warn(`Baixo estoque: código #${product.id} - ${product.name}`, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: false,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Slide,
+          className: "w-96", // aumenta a largura
+          style: {
+            width: "384px", // 96 * 4px
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Erro ao verificar produtos com baixo estoque:', error);
+    }
+  };
+
+  // Nova função para executar as notificações automaticamente
+  const showNotifications = async () => {
+    if (notificationsShown || allProdutos.length === 0) return;
+    
+    try {
+      await validateNotify();
+      await lowStockNotify();
+      setNotificationsShown(true);
+    } catch (error) {
+      console.error('Erro ao mostrar notificações:', error);
+    }
+  };
+
   // 5. HANDLERS
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -257,24 +381,12 @@ export const Produtos = () => {
       console.log('Enviando dados da categoria:', categoryData);
 
       const response = await api.post("/categories", categoryData);
-      
-      console.log('Resposta da API:', response.data);
-      
-      // Extrair os dados da categoria da resposta
-      // O controller retorna os dados diretamente ou em response.data.data
       const newCategory = response.data.data || response.data;
-      
-      // Adicionar nova categoria à lista
       setCategories(prev => [...prev, newCategory]);
-      
-      // Fechar modal e limpar dados
       setIsCreateCategoryModalOpen(false);
       setCategoryName('');
       setCategoryDescription('');
-      
-      setSuccessMessage('Categoria criada com sucesso!');
-      setTimeout(() => setSuccessMessage(''), 3000);
-      
+      toast.success('Categoria criada com sucesso!');
     } catch (error) {
       console.error('Erro ao criar categoria:', error);
       
@@ -313,18 +425,14 @@ export const Produtos = () => {
       };
 
       const response = await api.put(`/products/${editingProduct.id}`, productData);
-      
-      // Atualizar produto na lista local
       setAllProdutos(prevProdutos => 
         prevProdutos.map(p => 
           p.id === editingProduct.id ? response.data : p
         )
       );
-      
       setIsEditModalOpen(false);
       setEditingProduct(null);
-      setSuccessMessage('Produto atualizado com sucesso!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      toast.success('Produto atualizado com sucesso!');
     } catch (error) {
       console.error('Erro ao atualizar produto:', error);
       setError('Erro ao atualizar produto');
@@ -335,19 +443,15 @@ export const Produtos = () => {
     if (window.confirm('Tem certeza que deseja excluir este produto?')) {
       try {
         await api.delete(`/products/${id}`);
-        
-        // Remover produto da lista local
         setAllProdutos(prevProdutos => prevProdutos.filter(produto => produto.id !== id));
-        setSuccessMessage('Produto excluído com sucesso!');
+        toast.success('Produto excluído com sucesso!');
         
-        // Se a página atual ficar vazia após a exclusão, voltar uma página
+        // Mantenha a lógica de paginação existente
         const remainingProducts = filteredProdutos.filter(produto => produto.id !== id);
         const maxPage = Math.ceil(remainingProducts.length / itemsPerPage) || 1;
         if (currentPage > maxPage) {
           setCurrentPage(maxPage);
         }
-        
-        setTimeout(() => setSuccessMessage(''), 3000);
       } catch (error) {
         console.error('Erro ao excluir produto:', error);
         let errorMessage = 'Erro ao excluir produto.';
@@ -448,9 +552,13 @@ export const Produtos = () => {
   // 8. EFFECTS
   useEffect(() => {
     const loadData = async () => {
-      // Carregar categorias primeiro, depois produtos
-      await fetchCategories();
-      await fetchAllProdutos();
+      try {
+        // First load categories and products
+        await fetchCategories();
+        await fetchAllProdutos();
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
     };
     
     loadData();
@@ -462,6 +570,18 @@ export const Produtos = () => {
     setSearchQuery(searchFromParams);
     setCurrentPage(pageFromParams);
   }, []);
+
+  // Effect separado para mostrar notificações quando os produtos estiverem carregados
+  useEffect(() => {
+    if (!isLoading && allProdutos.length > 0 && !notificationsShown) {
+      // Delay pequeno para garantir que a página foi totalmente carregada
+      const timeoutId = setTimeout(() => {
+        showNotifications();
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isLoading, allProdutos.length, notificationsShown]);
 
   // Quando a busca ou filtros mudam, resetar para página 1
   useEffect(() => {
@@ -482,6 +602,19 @@ export const Produtos = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
+
+  const getValidityColorClass = (validateDate) => {
+    if (!validateDate) return '';
+    
+    const today = new Date();
+    const expiryDate = new Date(validateDate + 'T00:00:00');
+    const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+    const settings = globalSettings; // Configurações do banco de dados
+    
+    if (daysUntilExpiry < 0) return 'text-red-600'; // Vencido
+    if (daysUntilExpiry <= settings.daysBeforeExpiryNotification) return 'text-yellow-600'; // Próximo do vencimento
+    return 'text-green-600'; // Normal
+  };
 
   if (isLoading) {
     return (
@@ -562,12 +695,6 @@ export const Produtos = () => {
                 >
                   ×
                 </button>
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                {successMessage}
               </div>
             )}
 
@@ -791,6 +918,19 @@ export const Produtos = () => {
         </div>
       </div>
       
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        transition={Slide}
+        toastClassName="!w-96" // aumenta a largura
+        />
       {/* Modais existentes */}
       <EditModal 
         isOpen={isEditModalOpen}

@@ -51,7 +51,8 @@ export function GlobalSettingsModal({ isOpen, onClose }) {
       const response = await api.put('/settings', settings);
       if (response.status === 200) {
         toast.success('Configurações salvas com sucesso!');
-        onClose();
+        onClose(); // Fecha o modal após salvar com sucesso
+        return; // Retorna para evitar execução adicional
       }
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);

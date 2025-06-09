@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 
 // Bibliotecas externas
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Componentes
@@ -17,7 +17,6 @@ function Estoque() {
   // 1. ESTADOS
   // Estados de UI
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -354,16 +353,14 @@ function Estoque() {
           }
           return p;
         }));
-        
-        setSuccessMessage("Produto atualizado com sucesso!");
+        toast.success("Produto atualizado com sucesso!");
       } else {
         const res = await api.post('/products', productData);
         fetchProducts(1, searchQuery);
-        setSuccessMessage("Produto adicionado com sucesso!");
+        toast.success("Produto adicionado com sucesso!");
       }
 
       clearForm();
-      setTimeout(() => setSuccessMessage(''), 3000);
       setError('');
     } catch (err) {
       console.error("Erro ao salvar produto:", err);
@@ -407,7 +404,7 @@ function Estoque() {
       try {
         await api.delete(`/products/${productId}`);
         setProducts(products.filter(product => product.id !== productId));
-        setSuccessMessage('Produto excluído com sucesso!');
+        toast.success('Produto excluído com sucesso!');
         
         // Se após excluir não houver mais produtos na página atual e não for a primeira página
         if (products.length === 1 && page > 1) {
@@ -488,12 +485,6 @@ function Estoque() {
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 {error}
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                {successMessage}
               </div>
             )}
 
@@ -915,6 +906,7 @@ function Estoque() {
         </div>
       </div>
       
+      <ToastContainer />
       {/* Modal de escolher categoria */}
       <ChooseCategoryModal
         isOpen={isChooseCategoryModalOpen}
