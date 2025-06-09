@@ -465,6 +465,31 @@ function Estoque() {
     fetchGlobalSettings();
   }, []);
 
+  // 1. Adicione um novo estado para entrada de pesquisa temporária
+  const [searchInput, setSearchInput] = useState("");
+
+  // 2. Modifique a função handleSearchChange
+  const handleSearchChange = (e) => {
+    setSearchInput(e.target.value);
+  };
+
+  // 3. Adicione nova função para executar a pesquisa
+  const executeSearch = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("search", searchInput.trim());
+    newParams.set("page", "1");
+    setSearchParams(newParams);
+    setSearchQuery(searchInput.trim());
+  };
+
+  // 4. Adicione função para lidar com a tecla Enter
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      executeSearch();
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -473,9 +498,11 @@ function Estoque() {
         <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide">
           <div className='border-b border-stone-400 px-36 mb-4 pb-4 sticky top-0 bg-white z-10'>
             <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-semibold mx-96 text-stone-700 py-6">
-                Estoque de Produtos
-              </h1>
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl font-semibold mx-96 text-stone-700 py-6">
+                  Estoque de Produtos
+                </h1>
+              </div>
             </div>
           </div>
 
@@ -488,41 +515,95 @@ function Estoque() {
               </div>
             )}
 
-            {/* Barra de pesquisa com largura total do container */}
-            <div className="mb-4 gap-2 flex items-center"> {/* Adicionado items-center */}
-              <input
-                type="text"
-                placeholder="Pesquisar produto"
-                value={searchQuery}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setSearchQuery(newValue);
-                  
-                  // Atualiza os parâmetros da URL mantendo a consistência
-                  const newParams = new URLSearchParams(searchParams);
-                  newParams.set("search", newValue);
-                  newParams.set("page", "1");
-                  setSearchParams(newParams);
-                }}
-                className="p-3 rounded w-full text-lg placeholder-gray-400 text-white bg-cinza-escuro hover:bg-gray-800 focus:outline-none focus:bg-gray-800 transition-colors"
-              />
-              <button
-                onClick={() => setIsGlobalSettingsModalOpen(true)}
-                className="px-4 py-3 h-[52px] bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2 whitespace-nowrap focus:outline-none"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                </svg>
-                Gerenciar Produtos
-              </button>
+            {/* Barra de pesquisa com botão */}
+            <div className="mb-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Pesquisar produto"
+                  value={searchInput}
+                  onChange={handleSearchChange}
+                  onKeyPress={handleKeyPress}
+                  className="p-3 rounded-lg flex-1 text-lg text-gray-400 bg-cinza-escuro hover:bg-gray-800 placeholder-gray-400 focus:outline-none focus:bg-gray-800 transition-colors"
+                />
+                <button
+                  onClick={executeSearch}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 focus:outline-none flex items-center gap-2"
+                >
+                  <svg 
+                    className="w-5 h-5" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                    />
+                  </svg>
+                  Pesquisar
+                </button>
+              </div>
+
+              {searchQuery && (
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-sm text-stone-500">
+                    Mostrando {products.length} resultado{products.length !== 1 ? 's' : ''}
+                    {searchQuery && ` para "${searchQuery}"`}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSearchInput("");
+                        const newParams = new URLSearchParams(searchParams);
+                        newParams.delete("search");
+                        setSearchParams(newParams);
+                      }}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 focus:outline-none"
+                    >
+                      Limpar Busca
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Formulário */}
             {shouldShowForm() && (
               <div className="bg-white text-stone-600 py-6 pb-10 px-12 rounded-lg shadow-xl border border-stone-300 mb-8">
+                <div className="flex justify-between">
                 <h2 className="text-2xl font-semibold mb-4">
                   {editingProductId ? "Editar Produto" : "Adicionar Novo Produto"}
                 </h2>
+                <button
+                  onClick={() => setIsGlobalSettingsModalOpen(true)}
+                  className="px-4 py-2 mb-3 bg-zinc-700 text-white rounded transition-colors hover:bg-zinc-500 duration-200 focus:outline-none flex items-center gap-2"
+                >
+                  <svg 
+                    className="w-5 h-5" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  Gerenciar Produtos
+                </button>
+                </div>
                 <form onSubmit={handleAddProduct}>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <input
