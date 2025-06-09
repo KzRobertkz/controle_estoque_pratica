@@ -22,6 +22,7 @@ import { CreateCategoryModal } from '../components/modal/newcategorymodal';
 import { ManageCategorysModal } from '../components/modal/categorysmodal';
 import { FilterModal } from '../components/modal/filtermodal';
 import { GlobalSettingsModal } from '../components/modal/globalsettingsmodal';
+import { shouldShowNotifications } from '../utils/notificationUtils';
 
 export const Produtos = () => {
   // 1. ESTADOS
@@ -31,7 +32,8 @@ export const Produtos = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [notificationsShown, setNotificationsShown] = useState(false); // Novo estado para controlar notificações
+  const [notificationsShown, setNotificationsShown] = useState(false);
+  const [globalSettingsborder, setGlobalSettingsborder] = useState(null);
 
   // Estados de Produtos
   const [allProdutos, setAllProdutos] = useState([]);
@@ -158,11 +160,11 @@ export const Produtos = () => {
           }
         });
         
-        // Map the data and ensure validate_date is set from validateDate
+        // Mapeia os dados e certifica que validate_date esteja definido a partir de validateDate
         const pageData = Array.isArray(response.data.data) 
           ? response.data.data.map(product => ({
               ...product,
-              validate_date: product.validateDate // Use validateDate from API
+              validate_date: product.validateDate // Usa validateDate da API
             }))
           : [];
 
@@ -190,6 +192,16 @@ export const Produtos = () => {
       setAllProdutos([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Nova função para buscar configurações globais e definir a borda
+  const fetchGlobalSettings = async () => {
+    try {
+        const response = await api.get('/settings');
+        setGlobalSettingsborder(response.data);
+    } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
     }
   };
 
@@ -235,112 +247,60 @@ export const Produtos = () => {
   };
 
   const validateNotify = async () => {
+    // Verifica primeiro se as notificações devem ser mostradas
+    if (!shouldShowNotifications()) return;
+
     try {
-      const response = await api.get('/settings');
-      const settings = response.data;
-      
-      if (!settings.notifyBeforeExpiry) return;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      console.log('Settings:', settings);
-      console.log('Total produtos:', allProdutos.length);
-
-      const productsNearExpiry = allProdutos.filter(product => {
-        // Check both validateDate and validate_date fields
-        const expiryDate = product.validate_date || product.validateDate;
+        const response = await api.get('/settings');
+        const settings = response.data;
         
-        if (!expiryDate) {
-          console.log(`Produto ${product.id} sem data de validade`);
-          return false;
-        }
+        if (!settings.notifyBeforeExpiry) return;
 
-        const validityDate = new Date(expiryDate);
-        validityDate.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-        const diffDays = Math.ceil((validityDate - today) / (1000 * 60 * 60 * 24));
+        const productsNearExpiry = allProdutos.filter(product => {
+            const expiryDate = product.validate_date || product.validateDate;
+            if (!expiryDate) return false;
 
-        console.log('Verificando produto:', {
-          id: product.id,
-          name: product.name,
-          validate_date: expiryDate,
-          validityDate: validityDate.toISOString(),
-          today: today.toISOString(),
-          diffDays,
-          daysBeforeExpiryNotification: settings.daysBeforeExpiryNotification
+            const validityDate = new Date(expiryDate);
+            validityDate.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((validityDate - today) / (1000 * 60 * 60 * 24));
+
+            return diffDays > 0 && diffDays <= settings.daysBeforeExpiryNotification;
         });
 
-        return diffDays > 0 && diffDays <= settings.daysBeforeExpiryNotification;
-      });
-
-      console.log('Produtos encontrados:', productsNearExpiry.length);
-
-      if (productsNearExpiry.length === 0) {
-        return; // Removido o toast de "nenhum produto próximo do vencimento"
-      }
-
-      productsNearExpiry.forEach(product => {
-        const validityDate = new Date(product.validate_date);
-        validityDate.setHours(0, 0, 0, 0);
-
-        const diffDays = Math.ceil((validityDate - today) / (1000 * 60 * 60 * 24));
-
-        // Sempre será warning pois já filtramos produtos vencidos
-        const message = `Vence em ${diffDays} dias: código #${product.id} - ${product.name}`;
-
-        toast.warning(message, {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Slide,
-          className: "w-96",
-          style: {
-            width: "384px",
-          }
+        productsNearExpiry.forEach(product => {
+            const validityDate = new Date(product.validate_date);
+            validityDate.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((validityDate - today) / (1000 * 60 * 60 * 24));
+            toast.warning(`Vence em ${diffDays} dias: código #${product.id} - ${product.name}`);
         });
-      });
     } catch (error) {
-      console.error('Erro ao verificar produtos a vencer:', error);
-    }
+        console.error('Erro ao verificar produtos a vencer:', error);
+      }
   };
 
   const lowStockNotify = async () => {
-    try {
-      const response = await api.get('/settings');
-      const settings = response.data;
-      
-      if (!settings.notifyLowStock) return;
+      // Verifica primeiro se as notificações devem ser mostradas
+      if (!shouldShowNotifications()) return;
 
-      const lowStockProducts = allProdutos.filter(product => 
-        product.stock <= settings.defaultMinStock && product.stock > 0
-      );
+      try {
+          const response = await api.get('/settings');
+          const settings = response.data;
+          
+          if (!settings.notifyLowStock) return;
 
-      lowStockProducts.forEach(product => {
-        toast.warn(`Baixo estoque: código #${product.id} - ${product.name}`, {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: false,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Slide,
-          className: "w-96", // aumenta a largura
-          style: {
-            width: "384px", // 96 * 4px
-          }
-        });
-      });
-    } catch (error) {
-      console.error('Erro ao verificar produtos com baixo estoque:', error);
-    }
+          const lowStockProducts = allProdutos.filter(product => 
+              product.stock <= settings.defaultMinStock && product.stock > 0
+          );
+
+          lowStockProducts.forEach(product => {
+              toast.warn(`Baixo estoque: código #${product.id} - ${product.name}`);
+          });
+      } catch (error) {
+          console.error('Erro ao verificar produtos com baixo estoque:', error);
+      }
   };
 
   // Nova função para executar as notificações automaticamente
@@ -354,6 +314,24 @@ export const Produtos = () => {
     } catch (error) {
       console.error('Erro ao mostrar notificações:', error);
     }
+  };
+
+  const showToast = (message, type = 'success') => {
+    if (!shouldShowNotifications()) return;
+    
+    switch(type) {
+        case 'success':
+            toast.success(message);
+            break;
+        case 'warning':
+            toast.warning(message);
+            break;
+        case 'error':
+            toast.error(message);
+            break;
+        default:
+            toast(message);
+      }
   };
 
   // 5. HANDLERS
@@ -553,9 +531,10 @@ export const Produtos = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // First load categories and products
+        // Primeiro carrega as categorias e os produtos, depois as configurações globais
         await fetchCategories();
         await fetchAllProdutos();
+        await fetchGlobalSettings(); // Add this line
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
       }
@@ -614,6 +593,32 @@ export const Produtos = () => {
     if (daysUntilExpiry < 0) return 'text-red-600'; // Vencido
     if (daysUntilExpiry <= settings.daysBeforeExpiryNotification) return 'text-yellow-600'; // Próximo do vencimento
     return 'text-green-600'; // Normal
+  };
+
+  const getProductWarningStatus = (product) => {
+      if (!globalSettingsborder) return false;
+      
+      // Checa por estoque baixo
+      if (globalSettingsborder.notifyLowStock && 
+          product.stock <= globalSettingsborder.defaultMinStock && 
+          product.stock > 0) {
+          return true;
+      }
+
+      // Checa por produtos vencendo
+      if (globalSettingsborder.notifyBeforeExpiry && product.validate_date) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const validityDate = new Date(product.validate_date);
+          validityDate.setHours(0, 0, 0, 0);
+          const diffDays = Math.ceil((validityDate - today) / (1000 * 60 * 60 * 24));
+          
+          if (diffDays > 0 && diffDays <= globalSettingsborder.daysBeforeExpiryNotification) {
+              return true;
+          }
+      }
+
+      return false;
   };
 
   if (isLoading) {
@@ -744,7 +749,10 @@ export const Produtos = () => {
                 paginatedProdutos.map((produto) => (
                   <div 
                     key={produto.id}
-                    className="bg-white p-6 rounded-lg border border-stone-300 shadow-sm hover:shadow-lg transition-shadow duration-200"
+                    className={`bg-white p-6 rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200 
+                    ${getProductWarningStatus(produto) 
+                        ? 'border-2 border-yellow-400' 
+                        : 'border border-stone-300'}`}
                   >
                     <div className="flex flex-col gap-2">
                       <h4 className="text-lg font-semibold text-stone-700">{produto.name}</h4>
