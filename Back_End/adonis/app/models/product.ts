@@ -41,12 +41,4 @@ export default class Product extends BaseModel {
     foreignKey: 'categoryId',
   })
   declare category: BelongsTo<typeof Category>
-
-  // Atualize o serializador
-  public serialize() {
-    return {
-      ...super.serialize(),
-      validate_date: this.validate_date ? this.validate_date.toISODate() : null
-    }
-  }
 }

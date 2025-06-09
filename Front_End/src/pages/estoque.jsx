@@ -4,17 +4,19 @@ import { useSearchParams } from "react-router-dom";
 
 // Bibliotecas externas
 import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Componentes
 import Header from "../components/Header/header";
 import { Sidebar } from "../components/Sidebar/sidebar";
 import { ChooseCategoryModal } from "../components/modal/choosecategorymodal";
+import { GlobalSettingsModal } from "../components/modal/globalsettingsmodal";
 
 function Estoque() {
   // 1. ESTADOS
   // Estados de UI
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,60 @@ function Estoque() {
   });
   const pageParam = searchParams.get("page");
   const page = pageParam ? Number(pageParam) : 1;
+
+  // Estados do Modal de Gerenciar Produto
+  const [isGlobalSettingsModalOpen, setIsGlobalSettingsModalOpen] = useState(false);
+
+  // Adicione um novo estado para as configurações globais
+  const [globalSettings, setGlobalSettings] = useState({
+    defaultMinStock: null,
+    daysBeforeExpiryNotification: null,
+    notifyLowStock: null,
+    notifyBeforeExpiry: null
+  });
+
+  const getStockColorClass = (stock) => {
+  // Se as configurações ainda não foram carregadas ou notifyLowStock é null
+  if (globalSettings.notifyLowStock === null || !globalSettings.defaultMinStock) {
+    return 'text-gray-600';
+  }
+
+  if (!globalSettings.notifyLowStock) return 'text-gray-600';
+  if (stock === 0) return 'text-red-600';
+  if (stock <= globalSettings.defaultMinStock) return 'text-yellow-600';
+  return 'text-green-600';
+};
+
+  const getValidityColorClass = (validateDate) => {
+    if (!validateDate) return 'text-gray-600';
+    
+    // Se as configurações ainda não foram carregadas
+    if (globalSettings.notifyBeforeExpiry === null || 
+        !globalSettings.daysBeforeExpiryNotification) {
+      return 'text-gray-600';
+    }
+
+    if (!globalSettings.notifyBeforeExpiry) return 'text-gray-600';
+
+    const today = new Date();
+    const expiryDate = new Date(validateDate + 'T00:00:00');
+    const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilExpiry < 0) return 'text-red-600';
+    if (daysUntilExpiry <= globalSettings.daysBeforeExpiryNotification) return 'text-yellow-600';
+    return 'text-green-600';
+  };
+
+  // 4. Certifique-se de que o useEffect está carregando as configurações quando o componente monta
+  useEffect(() => {
+    fetchGlobalSettings();
+  }, []);
+
+  // 5. Adicione um handler para atualizar as configurações quando o modal fecha
+  const handleCloseGlobalSettingsModal = () => {
+    setIsGlobalSettingsModalOpen(false);
+    fetchGlobalSettings(); // Recarrega as configurações após fechar o modal
+  };
 
   // 2. CONFIGURAÇÃO DA API
   const api = axios.create({
@@ -113,8 +169,11 @@ function Estoque() {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     try {
-      return new Date(dateString).toLocaleDateString('pt-BR');
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return ''; // Retorna string vazia se a data for inválida
+      return date.toLocaleDateString('pt-BR');
     } catch (error) {
+      console.error('Erro ao formatar data:', error);
       return '';
     }
   };
@@ -185,13 +244,21 @@ function Estoque() {
     }
   };
 
+  // Primeiro, modifique a função fetchProducts
   const fetchProducts = async (pageNumber = 1, query = "") => {
+    setLoading(true);
     try {
       const response = await api.get("/products", {
         params: { page: pageNumber, search: query }
       });
       
-      const data = Array.isArray(response.data.data) ? response.data.data : [];
+      const data = Array.isArray(response.data.data) 
+        ? response.data.data.map(product => ({
+            ...product,
+            validate_date: product.validate_date || product.validateDate
+          }))
+        : [];
+    
       const metaData = response.data.meta || {};
       
       setProducts([...data].sort((a, b) => b.id - a.id));
@@ -209,6 +276,28 @@ function Estoque() {
         ? "Você precisa estar logado para visualizar produtos."
         : "Erro ao carregar produtos. Por favor, tente novamente."
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para buscar configurações globais
+  const fetchGlobalSettings = async () => {
+    try {
+      const response = await api.get('/settings');
+      console.log('Configurações carregadas do backend:', response.data);
+      
+      if (response.data) {
+        setGlobalSettings({
+          defaultMinStock: response.data.defaultMinStock,
+          daysBeforeExpiryNotification: response.data.daysBeforeExpiryNotification,
+          notifyLowStock: response.data.notifyLowStock,
+          notifyBeforeExpiry: response.data.notifyBeforeExpiry
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+      toast.error('Erro ao carregar configurações globais');
     }
   };
 
@@ -264,16 +353,14 @@ function Estoque() {
           }
           return p;
         }));
-        
-        setSuccessMessage("Produto atualizado com sucesso!");
+        toast.success("Produto atualizado com sucesso!");
       } else {
         const res = await api.post('/products', productData);
         fetchProducts(1, searchQuery);
-        setSuccessMessage("Produto adicionado com sucesso!");
+        toast.success("Produto adicionado com sucesso!");
       }
 
       clearForm();
-      setTimeout(() => setSuccessMessage(''), 3000);
       setError('');
     } catch (err) {
       console.error("Erro ao salvar produto:", err);
@@ -304,7 +391,6 @@ function Estoque() {
     
     setSelectedCategoryId(product.category_id?.toString() || product.categoryId?.toString() || '');
     setEditingProductId(product.id);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Função para cancelar edição
@@ -318,7 +404,7 @@ function Estoque() {
       try {
         await api.delete(`/products/${productId}`);
         setProducts(products.filter(product => product.id !== productId));
-        setSuccessMessage('Produto excluído com sucesso!');
+        toast.success('Produto excluído com sucesso!');
         
         // Se após excluir não houver mais produtos na página atual e não for a primeira página
         if (products.length === 1 && page > 1) {
@@ -362,6 +448,7 @@ function Estoque() {
     fetchCategories();
   }, []);
 
+  // Modifique o useEffect que observa searchParams
   useEffect(() => {
     const searchFromParams = searchParams.get("search") || "";
     const newPage = Number(searchParams.get("page") || "1");
@@ -373,9 +460,10 @@ function Estoque() {
     fetchProducts(newPage, searchFromParams);
   }, [searchParams]);
 
+  // Adicionar novo useEffect para carregar as configurações
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [searchParams]);
+    fetchGlobalSettings();
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -384,9 +472,11 @@ function Estoque() {
         <Sidebar />
         <div className="rounded-lg bg-white pb-3 shadow h-[calc(98vh-6rem)] overflow-y-scroll mt-20 scrollbar-hide">
           <div className='border-b border-stone-400 px-36 mb-4 pb-4 sticky top-0 bg-white z-10'>
-            <h1 className="text-2xl flex justify-center font-semibold text-stone-700 py-6 px-96 ">
-              Estoque de Produtos
-            </h1>
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-semibold mx-96 text-stone-700 py-6">
+                Estoque de Produtos
+              </h1>
+            </div>
           </div>
 
           {/* Container do Form */}
@@ -398,14 +488,8 @@ function Estoque() {
               </div>
             )}
 
-            {successMessage && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                {successMessage}
-              </div>
-            )}
-
             {/* Barra de pesquisa com largura total do container */}
-            <div className="mb-4">
+            <div className="mb-4 gap-2 flex items-center"> {/* Adicionado items-center */}
               <input
                 type="text"
                 placeholder="Pesquisar produto"
@@ -417,11 +501,20 @@ function Estoque() {
                   // Atualiza os parâmetros da URL mantendo a consistência
                   const newParams = new URLSearchParams(searchParams);
                   newParams.set("search", newValue);
-                  newParams.set("page", "1"); // Reset to page 1 on search change
+                  newParams.set("page", "1");
                   setSearchParams(newParams);
                 }}
-                className="p-3 mt-6 rounded w-full text-lg placeholder-gray-400 text-white bg-cinza-escuro hover:bg-gray-800 focus:outline-none focus:bg-gray-800 transition-colors"
+                className="p-3 rounded w-full text-lg placeholder-gray-400 text-white bg-cinza-escuro hover:bg-gray-800 focus:outline-none focus:bg-gray-800 transition-colors"
               />
+              <button
+                onClick={() => setIsGlobalSettingsModalOpen(true)}
+                className="px-4 py-3 h-[52px] bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2 whitespace-nowrap focus:outline-none"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                </svg>
+                Gerenciar Produtos
+              </button>
             </div>
 
             {/* Formulário */}
@@ -589,7 +682,7 @@ function Estoque() {
                               <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V7l-7-5z" clipRule="evenodd" />
                             </svg>
                             <span className="text-gray-700 font-medium">Estoque:</span>
-                            <span className={`font-bold ml-1 ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-yellow-600' : 'text-red-600'}`}>
+                            <span className={`font-bold ml-1 ${getStockColorClass(product.stock)}`}>
                               {product.stock} unidades
                             </span>
                           </div>
@@ -612,13 +705,7 @@ function Estoque() {
                               />
                             </svg>
                             <span className="text-gray-700 font-medium">Validade:</span>
-                            <span className={`font-bold ml-1 ${
-                              new Date(product.validate_date + 'T00:00:00') < new Date() 
-                                ? 'text-red-600'
-                                : new Date(product.validate_date + 'T00:00:00') <= new Date(new Date().setDate(new Date().getDate() + 30))
-                                ? 'text-yellow-600'
-                                : 'text-green-600'
-                            }`}>
+                            <span className={`font-bold ml-1 ${getValidityColorClass(product.validate_date)}`}>
                               {new Date(product.validate_date + 'T00:00:00').toLocaleDateString('pt-BR')}
                               {new Date(product.validate_date + 'T00:00:00') < new Date() && " (Vencido)"}
                             </span>
@@ -654,7 +741,7 @@ function Estoque() {
                         >
                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                          </svg>
+                        </svg>
                           Editar
                         </button>
                         <button
@@ -819,12 +906,19 @@ function Estoque() {
         </div>
       </div>
       
+      <ToastContainer />
       {/* Modal de escolher categoria */}
       <ChooseCategoryModal
         isOpen={isChooseCategoryModalOpen}
         onClose={() => setIsChooseCategoryModalOpen(false)}
         onCategorySelect={handleCategorySelect}
         selectedCategoryId={selectedCategoryId}
+      />
+
+      {/* Modal de configurações globais */}
+      <GlobalSettingsModal 
+        isOpen={isGlobalSettingsModalOpen}
+        onClose={handleCloseGlobalSettingsModal}
       />
 
       {/* Loader */}

@@ -1,7 +1,9 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import { inject } from '@adonisjs/core'
 import Product from '#models/product'
 import { DateTime } from 'luxon'
 
+@inject()
 export default class ProductsController {
   async index({ request, response }: HttpContext) {
     try {
@@ -165,6 +167,7 @@ export default class ProductsController {
     }
   }
 
+  
   // Outras funções
   public async getRecent({ response }: HttpContext) {
     try {
@@ -224,7 +227,5 @@ export default class ProductsController {
       })
     }
   }
-
-
 }
 

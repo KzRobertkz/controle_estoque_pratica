@@ -41,6 +41,10 @@ router.group(() => {
   router.put('/products/:id', '#controllers/products_controller.update')
   router.delete('/products/:id', '#controllers/products_controller.destroy')
 
+  // Rotas de configurações globais de produtos
+  router.get('/settings', '#controllers/settings_controller.index')
+  router.put('/settings', '#controllers/settings_controller.update')
+
   // Rotas de Categorias dos produtos
   router.get('/categories', '#controllers/categories_controller.index')
   router.post('/categories', '#controllers/categories_controller.store')
@@ -52,6 +56,7 @@ router.group(() => {
   router.get('/products/recent', '#controllers/products_controller.getRecent')
   router.get('/products/recent/history', '#controllers/products_controller.getHistory')
   router.get('/products/recent/history/page', '#controllers/products_controller.getPages')
+  
 }).middleware(middleware.auth())
 
 
