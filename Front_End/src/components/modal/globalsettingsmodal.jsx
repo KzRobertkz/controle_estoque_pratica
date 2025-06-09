@@ -173,7 +173,6 @@ export function GlobalSettingsModal({ isOpen, onClose }) {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    placeholder="Digite um valor"
                     value={settings.daysBeforeExpiryNotification ?? ''}
                     disabled={!settings.notifyBeforeExpiry}
                     onChange={(e) => {
