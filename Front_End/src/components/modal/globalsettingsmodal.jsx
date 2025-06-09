@@ -202,7 +202,7 @@ export function GlobalSettingsModal({ isOpen, onClose }) {
 
             {/* Configurações de Notificações */}
             <div className="bg-gray-50 p-6 rounded-xl border border-stone-300 shadow-sm">
-              <h3 className="text-xl font-semibold mb-6 text-gray-800">Configurações de Notificações</h3>
+              <h3 className="text-xl font-semibold mb-6 text-gray-800">Configurações de Notificações ⭐BETA</h3>
 
               <div className="flex items-center space-x-3">
                 <input
