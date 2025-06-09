@@ -14,6 +14,7 @@ export default function Header() {
   const [user, setUser] = useState(null);
   const [userPhoto, setUserPhoto] = useState(null);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
+  const [showNotificationIcon, setShowNotificationIcon] = useState(true);
   const navigate = useNavigate();
   const { hideSearch } = useSearch();
 
@@ -45,6 +46,13 @@ export default function Header() {
 
     fetchUserInfo();
   }, []);
+
+  useEffect(() => {
+    const isHidden = localStorage.getItem('isNotificationsHidden');
+    if (isHidden) {
+        setShowNotificationIcon(!JSON.parse(isHidden));
+    }
+}, []);
 
   const handleLogout = async () => {
     try {
@@ -125,15 +133,17 @@ export default function Header() {
             {/* Nome do usuário + logout + notificações */}
             <div className="flex items-center gap-4 text-blue-600 hover:text-blue-800">
               {/* notificações */}
-              <div 
-                onClick={() => setIsNotificationsModalOpen(true)}
-                className="flex flex-col items-center text-blue-600 font-medium text-base hover:text-blue-800 transition-transform hover:scale-110 cursor-pointer"
-              >
-                <GoBell className="text-4xl" />
-                <span>
-                  Notificações
-                </span>
-              </div>
+              {showNotificationIcon && (
+                <div 
+                  onClick={() => setIsNotificationsModalOpen(true)}
+                  className="flex flex-col items-center text-blue-600 font-medium text-base hover:text-blue-800 transition-transform hover:scale-110 cursor-pointer"
+                >
+                  <GoBell className="text-4xl" />
+                  <span>
+                    Notificações
+                  </span>
+                </div>
+              )}
 
               {/* Exibe a foto e nome do usuário */}
               {user?.fullName && (

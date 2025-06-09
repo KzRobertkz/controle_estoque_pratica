@@ -48,17 +48,23 @@ export function GlobalSettingsModal({ isOpen, onClose }) {
   const handleSaveSettings = async () => {
     setLoading(true);
     try {
-      const response = await api.put('/settings', settings);
-      if (response.status === 200) {
-        toast.success('Configurações salvas com sucesso!');
-        onClose(); // Fecha o modal após salvar com sucesso
-        return; // Retorna para evitar execução adicional
-      }
+        const response = await api.put('/settings', settings);
+        if (response.status === 200) {
+            toast.success('Configurações salvas com sucesso!');
+            onClose(); // Fecha o modal após salvar com sucesso
+            
+            // Timeout para reload
+            setTimeout(() => {
+                window.location.reload();
+            }, 2300);
+            
+            return;
+        }
     } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
-      toast.error('Erro ao salvar configurações');
+        console.error('Erro ao salvar configurações:', error);
+        toast.error('Erro ao salvar configurações');
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -167,7 +173,6 @@ export function GlobalSettingsModal({ isOpen, onClose }) {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    placeholder="Digite um valor"
                     value={settings.daysBeforeExpiryNotification ?? ''}
                     disabled={!settings.notifyBeforeExpiry}
                     onChange={(e) => {
@@ -229,7 +234,7 @@ export function GlobalSettingsModal({ isOpen, onClose }) {
               <button
                 onClick={handleSaveSettings}
                 disabled={loading || !hasChanges()}
-                className={`px-6 py-2 rounded-md transition-colors ${
+                className={`px-6 py-2 rounded-md transition-colors focus:outline-none ${
                   !hasChanges() 
                     ? 'bg-blue-300 text-gray-100 cursor-not-allowed' 
                     : 'bg-blue-600 text-white hover:bg-blue-700'
