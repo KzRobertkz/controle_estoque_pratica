@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FiTrash2 } from 'react-icons/fi';
-import { FaEye , FaEyeSlash } from "react-icons/fa6";
+import { FaEye, FaEyeSlash } from "react-icons/fa6";
 
 // Modal para mudar a senha do usuário
 export const PasswordModal = ({ 
@@ -30,11 +30,69 @@ export const PasswordModal = ({
     }
   }, [isOpen, setCurrentPassword, setNewPassword, setConfirmPassword]);
 
+  // Função para validar força da senha
+  const validatePasswordStrength = (password) => {
+    if (!password) return { isValid: false, score: 0, feedback: [] };
+
+    const criteria = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      numbers: /\d/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+
+    const score = Object.values(criteria).filter(Boolean).length;
+    const isValid = score >= 3; // Pelo menos 3 critérios
+
+    const feedback = [
+      { text: 'Pelo menos 8 caracteres', met: criteria.length },
+      { text: 'Letra maiúscula', met: criteria.uppercase },
+      { text: 'Letra minúscula', met: criteria.lowercase },
+      { text: 'Número', met: criteria.numbers },
+      { text: 'Caractere especial (!@#$%^&*)', met: criteria.special }
+    ];
+
+    let strengthText = '';
+    let strengthColor = '';
+
+    if (score < 2) {
+      strengthText = 'Muito fraca';
+      strengthColor = 'text-red-600';
+    } else if (score < 3) {
+      strengthText = 'Fraca';
+      strengthColor = 'text-orange-600';
+    } else if (score < 4) {
+      strengthText = 'Boa';
+      strengthColor = 'text-yellow-600';
+    } else if (score < 5) {
+      strengthText = 'Forte';
+      strengthColor = 'text-green-600';
+    } else {
+      strengthText = 'Muito forte';
+      strengthColor = 'text-green-700';
+    }
+
+    return { isValid, score, feedback, strengthText, strengthColor };
+  };
+
+  const passwordValidation = validatePasswordStrength(newPassword);
+
+  // Verifica se as senhas coincidem
+  const passwordsMatch = confirmPassword === newPassword;
+
+  // Verifica se o formulário pode ser enviado
+  const canSubmit = currentPassword && 
+    newPassword && 
+    confirmPassword && 
+    passwordValidation.isValid && 
+    passwordsMatch;
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg w-96 max-w-md mx-4">
+      <div className="bg-white p-6 rounded-lg w-96 max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4 text-gray-800">
           Alterar Senha
         </h2>
@@ -56,22 +114,27 @@ export const PasswordModal = ({
                 <input
                   type={showCurrentPassword ? 'text' : 'password'}
                   value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  onChange={(e) => {
+                    setCurrentPassword(e.target.value);
+                    setError(''); // Limpa erro ao digitar
+                  }}
                   className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Digite sua senha atual"
                   required
                   disabled={isSubmitPassword}
                 />
-                <span
+                <button
+                  type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute inset-y-0 right-4 flex items-center cursor-pointer"
+                  className="absolute inset-y-0 -right-1 bg-transparent flex items-center cursor-pointer focus:outline-none"
+                  disabled={isSubmitPassword}
                 >
                   {showCurrentPassword ? (
                     <FaEyeSlash className="text-blue-600 h-6 w-5" />
                   ) : (
                     <FaEye className="text-blue-600 h-5 w-5" />
                   )}
-                </span>
+                </button>
               </div>
             </div>
 
@@ -84,23 +147,62 @@ export const PasswordModal = ({
                 <input
                   type={showNewPassword ? 'text' : 'password'}
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setError('');
+                  }}
                   className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Digite a nova senha"
                   required
                   disabled={isSubmitPassword}
                 />
-                <span
+                <button
+                  type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute inset-y-0 right-4 flex items-center cursor-pointer"
+                  className="absolute inset-y-0 -right-1 bg-transparent flex items-center cursor-pointer focus:outline-none"
+                  disabled={isSubmitPassword}
                 >
                   {showNewPassword ? (
                     <FaEyeSlash className="text-blue-600 h-6 w-5" />
                   ) : (
                     <FaEye className="text-blue-600 h-5 w-5" />
                   )}
-                </span>
+                </button>
               </div>
+
+              {/* Indicador de força da senha */}
+              {newPassword && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          passwordValidation.score < 2 ? 'bg-red-500' :
+                          passwordValidation.score < 3 ? 'bg-orange-500' :
+                          passwordValidation.score < 4 ? 'bg-yellow-500' :
+                          passwordValidation.score < 5 ? 'bg-green-500' : 'bg-green-600'
+                        }`}
+                        style={{ width: `${(passwordValidation.score / 5) * 100}%` }}
+                      ></div>
+                    </div>
+                    <span className={`text-xs font-medium ${passwordValidation.strengthColor}`}>
+                      {passwordValidation.strengthText}
+                    </span>
+                  </div>
+                  
+                  {/* Critérios da senha */}
+                  <div className="text-xs space-y-1">
+                    {passwordValidation.feedback.map((criterion, index) => (
+                      <div key={index} className={`flex items-center gap-1 ${
+                        criterion.met ? 'text-green-600' : 'text-gray-400'
+                      }`}>
+                        <span>{criterion.met ? '✓' : '○'}</span>
+                        <span>{criterion.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Confirmar Senha */}
@@ -112,23 +214,35 @@ export const PasswordModal = ({
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setError('');
+                  }}
+                  className={`mt-1 block w-full rounded-md border p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    confirmPassword && !passwordsMatch 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-gray-300'
+                  }`}
                   placeholder="Confirme a nova senha"
                   required
                   disabled={isSubmitPassword}
                 />
-                <span
+                <button
+                  type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-4 flex items-center cursor-pointer"
+                  className="absolute inset-y-0 -right-1 bg-transparent flex items-center cursor-pointer focus:outline-none"
+                  disabled={isSubmitPassword}
                 >
                   {showConfirmPassword ? (
                     <FaEyeSlash className="text-blue-600 h-6 w-5" />
                   ) : (
                     <FaEye className="text-blue-600 h-5 w-5" />
                   )}
-                </span>
+                </button>
               </div>
+              {confirmPassword && !passwordsMatch && (
+                <p className="text-red-600 text-xs mt-1">As senhas não coincidem</p>
+              )}
             </div>
           </div>
           
@@ -144,7 +258,7 @@ export const PasswordModal = ({
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded focus:outline-none hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isSubmitPassword}
+              disabled={isSubmitPassword || !canSubmit}
             >
               {isSubmitPassword ? 'Salvando...' : 'Salvar'}
             </button>

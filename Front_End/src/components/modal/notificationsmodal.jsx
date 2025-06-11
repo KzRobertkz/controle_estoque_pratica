@@ -219,7 +219,7 @@ export const NotificationsModal = ({ isOpen, onClose, onNotificationsUpdate }) =
                 id: notificationId,
                 type: 'expiry',
                 title: 'Produto próximo do vencimento',
-                message: `${product.name} vence em ${diffDays} dia(s)`,
+                message: `${product.name} vence em ${diffDays} dias`,
                 date: new Date().toISOString(),
                 read: isNotificationRead(notificationId),
                 productId: product.id,

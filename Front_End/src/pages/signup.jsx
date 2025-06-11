@@ -15,18 +15,68 @@ export default function Signup() {
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showConfirmSignupPassword, setShowSignupConfirmPassword] = useState(false);
 
+  // Função de validação de senha forte
+  const validatePasswordStrength = (password) => {
+    if (!password) return { isValid: false, score: 0, feedback: [] };
+
+    const criteria = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      numbers: /\d/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+
+    const score = Object.values(criteria).filter(Boolean).length;
+    const isValid = score >= 3; // Pelo menos 3 critérios
+
+    const feedback = [
+      { text: 'Pelo menos 8 caracteres', met: criteria.length },
+      { text: 'Letra maiúscula', met: criteria.uppercase },
+      { text: 'Letra minúscula', met: criteria.lowercase },
+      { text: 'Número', met: criteria.numbers },
+      { text: 'Caractere especial (!@#$%^&*)', met: criteria.special }
+    ];
+
+    let strengthText = '';
+    let strengthColor = '';
+
+    if (score < 2) {
+      strengthText = 'Muito fraca';
+      strengthColor = 'text-red-600';
+    } else if (score < 3) {
+      strengthText = 'Fraca';
+      strengthColor = 'text-orange-600';
+    } else if (score < 4) {
+      strengthText = 'Boa';
+      strengthColor = 'text-yellow-600';
+    } else if (score < 5) {
+      strengthText = 'Forte';
+      strengthColor = 'text-green-600';
+    } else {
+      strengthText = 'Muito forte';
+      strengthColor = 'text-green-700';
+    }
+
+    return { isValid, score, feedback, strengthText, strengthColor };
+  };
+
+  const passwordValidation = validatePasswordStrength(password);
+  const passwordsMatch = confirmPassword === password;
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
-    // Validação de senha
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem')
+    // Validação de senha forte
+    if (!passwordValidation.isValid) {
+      setError('A senha deve atender pelo menos 3 dos critérios de segurança')
       return
     }
 
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres')
+    // Validação de confirmação de senha
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem')
       return
     }
 
@@ -49,7 +99,6 @@ export default function Signup() {
       setError('Erro na conexão com o servidor')
     }
   }
-
 
   return (
     <>
@@ -135,6 +184,40 @@ export default function Signup() {
                       )}
                     </span>
                   </div>
+
+                  {/* Indicador de força da senha */}
+                  {password && (
+                    <div className="mt-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              passwordValidation.score < 2 ? 'bg-red-500' :
+                              passwordValidation.score < 3 ? 'bg-orange-500' :
+                              passwordValidation.score < 4 ? 'bg-yellow-500' :
+                              passwordValidation.score < 5 ? 'bg-green-500' : 'bg-green-600'
+                            }`}
+                            style={{ width: `${(passwordValidation.score / 5) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className={`text-xs font-manrope font-medium ${passwordValidation.strengthColor}`}>
+                          {passwordValidation.strengthText}
+                        </span>
+                      </div>
+                      
+                      {/* Critérios da senha */}
+                      <div className="text-xs space-y-1 font-manrope">
+                        {passwordValidation.feedback.map((criterion, index) => (
+                          <div key={index} className={`flex items-center gap-1 ${
+                            criterion.met ? 'text-green-600' : 'text-gray-400'
+                          }`}>
+                            <span className="font-semibold">{criterion.met ? '✓' : '○'}</span>
+                            <span>{criterion.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -145,7 +228,11 @@ export default function Signup() {
                     <input
                       type={showConfirmSignupPassword ? 'text' : 'password'}
                       required
-                      className="w-full px-4 py-3 border border-gray-200 bg-cinza-escuro rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-inter placeholder-gray-400"
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-inter placeholder-gray-400 ${
+                        confirmPassword && !passwordsMatch 
+                          ? 'border-red-300  focus:ring-red-500 focus:border-red-500' 
+                          : 'border-gray-200 bg-cinza-escuro'
+                      }`}
                       placeholder="Confirm your password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -161,12 +248,16 @@ export default function Signup() {
                       )}
                     </span>
                   </div>
+                  {confirmPassword && !passwordsMatch && (
+                    <p className="text-red-600 text-xs mt-1 font-manrope">As senhas não coincidem</p>
+                  )}
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full mt-8 bg-gradient-to-r from-green-600 to-green-700 text-white font-manrope font-semibold py-3 rounded-xl hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full mt-8 bg-gradient-to-r from-green-600 to-green-700 text-white font-manrope font-semibold py-3 rounded-xl hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!passwordValidation.isValid || !passwordsMatch || !fullName || !email || !password || !confirmPassword}
               >
                 Criar Conta
               </button>

@@ -48,8 +48,8 @@ export const EditPasswordComponent = () => {
             if (!response.ok) {
                 if (response.status === 400 && data.errors) {
                     const errorMessage = data.errors.currentPassword?.[0] || 
-                                        data.errors.newPassword?.[0] || 
-                                        data.message || 'Dados inválidos';
+                    data.errors.newPassword?.[0] || 
+                    data.message || 'Dados inválidos';
                     throw new Error(errorMessage);
                 } else {
                     throw new Error(data?.message || 'Erro ao alterar senha');
