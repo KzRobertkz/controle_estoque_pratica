@@ -5,11 +5,15 @@ import leftpart from '../assets/leftpart.png'
 import rightTopPart from '../assets/rightpart.png'
 
 import { FaEye, FaEyeSlash } from 'react-icons/fa6'
+import { FiX } from "react-icons/fi";
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('')
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('')
   const navigate = useNavigate()
 
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -39,6 +43,34 @@ export default function Login() {
       navigate('/home')
     } catch (err) {
       setError('Erro na conexão com o servidor')
+    }
+  }
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    setForgotPasswordMessage('')
+
+    try {
+      const response = await fetch('http://localhost:3333/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotPasswordEmail }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setForgotPasswordMessage('Email de recuperação enviado com sucesso!')
+        setTimeout(() => {
+          setShowForgotPasswordModal(false)
+          setForgotPasswordEmail('')
+          setForgotPasswordMessage('')
+        }, 2000)
+      } else {
+        setForgotPasswordMessage(data.message || 'Erro ao enviar email de recuperação')
+      }
+    } catch (err) {
+      setForgotPasswordMessage('Erro na conexão com o servidor')
     }
   }
 
@@ -178,9 +210,19 @@ export default function Login() {
                   </div>
                 </div>
 
+                <div className="mt-1 text-right">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPasswordModal(true)}
+                    className="text-sm font-manrope text-blue-600 p-0 bg-transparent hover:text-blue-700 hover:underline focus:outline-none transition-colors duration-200"
+                  >
+                    Esqueci minha senha
+                  </button>
+                </div>
+
                 <button
                   type="submit"
-                  className="w-full mt-8 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-manrope font-semibold py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full mt-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-manrope font-semibold py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Entrar
                 </button>
@@ -196,6 +238,83 @@ export default function Login() {
               </form>
             </div>
           </div>
+
+          {/* Modal Esqueci Minha Senha */}
+          {showForgotPasswordModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+              <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 w-full max-w-md mx-4">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-2xl font-poppins font-bold text-gray-800">Recuperar Senha ⭐BETA</h3>
+                  <button
+                    onClick={() => {
+                      setShowForgotPasswordModal(false)
+                      setForgotPasswordEmail('')
+                      setForgotPasswordMessage('')
+                    }}
+                    className="text-gray-400 hover:text-gray-600 bg-transparent p-0 transition-colors duration-200 focus:outline-none"
+                  >
+                    <FiX className="h-7 w-7" />
+                  </button>
+                </div>
+
+                <p className="text-gray-600 font-manrope mb-6">
+                  Digite seu email para receber as instruções de recuperação de senha.
+                </p>
+
+                {forgotPasswordMessage && (
+                  <div className={`mb-4 p-4 rounded-lg ${
+                    forgotPasswordMessage.includes('sucesso') 
+                      ? 'bg-green-50 border border-green-200' 
+                      : 'bg-red-50 border border-red-200'
+                  }`}>
+                    <p className={`text-sm font-manrope ${
+                      forgotPasswordMessage.includes('sucesso') 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {forgotPasswordMessage}
+                    </p>
+                  </div>
+                )}
+
+                <form onSubmit={handleForgotPassword}>
+                  <div className="mb-6">
+                    <label className="block text-sm font-manrope font-semibold text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      className="w-full px-4 py-3 border border-stone-300 focus:bg-cinza-escuro bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 font-inter placeholder-gray-400"
+                      placeholder="your@email.com"
+                      value={forgotPasswordEmail}
+                      onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPasswordModal(false)
+                        setForgotPasswordEmail('')
+                        setForgotPasswordMessage('')
+                      }}
+                      className="flex-1 py-3 px-4 bg-gray-200 text-gray-500 font-manrope font-semibold rounded-xl hover:bg-gray-300 focus:outline-none"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-manrope font-semibold py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      Enviar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
     </>
   )
